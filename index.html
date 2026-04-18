@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -11,28 +12,37 @@
   <title>Big Al's Lighting Emporium — Quote Builder</title>
 
   <!-- PWA manifest, inlined as a data URI so the whole thing works from a single file -->
+
   <link rel="manifest" href='data:application/manifest+json,{"name":"Big%20Al%27s%20Lighting%20Emporium","short_name":"Big%20Al%27s","start_url":".","display":"standalone","background_color":"%23f8fafc","theme_color":"%230f172a","icons":[{"src":"data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%3E%3Crect%20width%3D%22512%22%20height%3D%22512%22%20rx%3D%22112%22%20fill%3D%22%230f172a%22%2F%3E%3Ccircle%20cx%3D%22256%22%20cy%3D%22210%22%20r%3D%2296%22%20fill%3D%22%233b82f6%22%2F%3E%3Cpath%20d%3D%22M200%20330%20h112%20v24%20h-112z%20M212%20366%20h88%20v18%20h-88z%20M228%20396%20h56%20v18%20h-56z%22%20fill%3D%22%233b82f6%22%2F%3E%3Ccircle%20cx%3D%22256%22%20cy%3D%22210%22%20r%3D%2256%22%20fill%3D%22%23f8fafc%22%2F%3E%3C%2Fsvg%3E","sizes":"512x512","type":"image/svg+xml","purpose":"any"}]}' />
 
   <!-- Apple touch icon (SVG works on modern iOS) -->
+
   <link rel="apple-touch-icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="%230f172a"/><circle cx="256" cy="210" r="96" fill="%233b82f6"/><path d="M200 330 h112 v24 h-112z M212 366 h88 v18 h-88z M228 396 h56 v18 h-56z" fill="%233b82f6"/><circle cx="256" cy="210" r="56" fill="%23f8fafc"/></svg>' />
 
   <!-- Favicon -->
+
   <link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="%230f172a"/><circle cx="256" cy="210" r="96" fill="%233b82f6"/><circle cx="256" cy="210" r="56" fill="%23f8fafc"/></svg>' />
 
   <!-- Fonts -->
+
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,450;9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" />
 
   <!-- Tailwind (CDN build) -->
+
   <script src="https://cdn.tailwindcss.com"></script>
 
   <!-- React + ReactDOM + Babel for in-browser JSX -->
+
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <!-- jsPDF (pre-loaded so PDF button works instantly, even offline) -->
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
@@ -50,6 +60,7 @@
     .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
     .safe-top { padding-top: env(safe-area-inset-top); }
   </style>
+
 </head>
 <body>
   <div id="root"></div>
@@ -385,10 +396,7 @@
         if (qty !== null) doc.text(String(qty), COL_QTY, baseY, { align: "center" });
         setText(9, "bold", DARK);
         doc.text(total, COL_TOTAL, baseY, { align: "right" });
-        y += rowH;
-        doc.setDrawColor(LINE[0], LINE[1], LINE[2]);
-        doc.setLineWidth(0.15);
-        doc.line(mL, y - 0.5, pageW - mR, y - 0.5);
+        y += rowH + 0.5;
       };
 
       Object.entries(CATALOG).forEach(([secKey, sec]) => {
@@ -1230,5 +1238,6 @@
 
     ReactDOM.createRoot(document.getElementById("root")).render(<QuoteGenerator />);
   </script>
+
 </body>
 </html>
