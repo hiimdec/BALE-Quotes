@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Big Al's" />
+  <title>Big Al's Lighting Emporium — Quote Builder</title>
+
+  <!-- PWA manifest, inlined as a data URI so the whole thing works from a single file -->
+  <link rel="manifest" href='data:application/manifest+json,{"name":"Big%20Al%27s%20Lighting%20Emporium","short_name":"Big%20Al%27s","start_url":".","display":"standalone","background_color":"%23f8fafc","theme_color":"%230f172a","icons":[{"src":"data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%3E%3Crect%20width%3D%22512%22%20height%3D%22512%22%20rx%3D%22112%22%20fill%3D%22%230f172a%22%2F%3E%3Ccircle%20cx%3D%22256%22%20cy%3D%22210%22%20r%3D%2296%22%20fill%3D%22%233b82f6%22%2F%3E%3Cpath%20d%3D%22M200%20330%20h112%20v24%20h-112z%20M212%20366%20h88%20v18%20h-88z%20M228%20396%20h56%20v18%20h-56z%22%20fill%3D%22%233b82f6%22%2F%3E%3Ccircle%20cx%3D%22256%22%20cy%3D%22210%22%20r%3D%2256%22%20fill%3D%22%23f8fafc%22%2F%3E%3C%2Fsvg%3E","sizes":"512x512","type":"image/svg+xml","purpose":"any"}]}' />
+
+  <!-- Apple touch icon (SVG works on modern iOS) -->
+  <link rel="apple-touch-icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="%230f172a"/><circle cx="256" cy="210" r="96" fill="%233b82f6"/><path d="M200 330 h112 v24 h-112z M212 366 h88 v18 h-88z M228 396 h56 v18 h-56z" fill="%233b82f6"/><circle cx="256" cy="210" r="56" fill="%23f8fafc"/></svg>' />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="%230f172a"/><circle cx="256" cy="210" r="96" fill="%233b82f6"/><circle cx="256" cy="210" r="56" fill="%23f8fafc"/></svg>' />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,450;9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+
+  <!-- Tailwind (CDN build) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- React + ReactDOM + Babel for in-browser JSX -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- jsPDF (pre-loaded so PDF button works instantly, even offline) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    html, body, #root { height: 100%; }
+    body {
+      margin: 0;
+      font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f8fafc;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-text-size-adjust: 100%;
+    }
+    /* Stop iOS from zooming when tapping inputs */
+    input, textarea, select { font-size: 16px; }
+    /* Respect the iPhone/iPad safe area */
+    .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+    .safe-top { padding-top: env(safe-area-inset-top); }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    /* Tiny inline icon set — avoids pulling in lucide-react */
+    const Icon = ({ d, size = 20, stroke = 2, fill = "none", className = "" }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+        fill={fill} stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round"
+        className={className}>{d}</svg>
+    );
+    const PlusIcon = (p) => <Icon {...p} d={<><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>} />;
+    const MinusIcon = (p) => <Icon {...p} d={<line x1="5" y1="12" x2="19" y2="12"/>} />;
+    const ChevDownIcon = (p) => <Icon {...p} d={<polyline points="6 9 12 15 18 9"/>} />;
+    const ChevRightIcon = (p) => <Icon {...p} d={<polyline points="9 18 15 12 9 6"/>} />;
+    const TrashIcon = (p) => <Icon {...p} d={<><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></>} />;
+    const DownloadIcon = (p) => <Icon {...p} d={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>} />;
+    const EyeIcon = (p) => <Icon {...p} d={<><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>} />;
+    const EditIcon = (p) => <Icon {...p} d={<><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></>} />;
+    const BulbIcon = (p) => <Icon {...p} d={<><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c1 .8 1.5 2 1.5 3.3h5c0-1.3.5-2.5 1.5-3.3A7 7 0 0 0 12 2z"/></>} />;
+    const SaveIcon = (p) => <Icon {...p} d={<><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></>} />;
+    const FolderIcon = (p) => <Icon {...p} d={<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>} />;
+    const XIcon = (p) => <Icon {...p} d={<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>} />;
+    const RotateIcon = (p) => <Icon {...p} d={<><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></>} />;
+    const CalendarIcon = (p) => <Icon {...p} d={<><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>} />;
+    const CheckIcon = (p) => <Icon {...p} d={<polyline points="20 6 9 17 4 12"/>} />;
+    const LoaderIcon = (p) => <Icon {...p} className={"animate-spin " + (p.className || "")} d={<><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></>} />;
+
+    /* ───────────────────────── Catalog ───────────────────────── */
+    const CATALOG = {
+      lights: { label: "Lights", items: [
+        { name: "NANLUX 2400B", price: 300 },
+        { name: "NANLUX EVOKE 1200B", price: 200 },
+        { name: "LITEMAT 4 SPECTRUM + DOP CHOICE SNAP GRID", price: 180 },
+        { name: "ASTERA TITAN 8 LIGHT KIT", price: 180 },
+        { name: "SKYPANEL X 21", price: 180 },
+        { name: "PROLYCHT ORION 675FS", price: 150 },
+        { name: "KINO AIR 2L + DOP CHOICE SNAP GRID", price: 110 },
+        { name: "APUTURE 400x", price: 95 },
+        { name: "NANLUX 150C", price: 75 },
+        { name: "NANLITE 60C 2-WAY KIT", price: 70 },
+        { name: "DEDO 150W 4 WAY KIT", price: 60 },
+        { name: "ROSCO DMG DASH 4 WAY KIT", price: 60 },
+        { name: "ALADDIN 2X1", price: 50 },
+        { name: "ASTERA NYX AND APUTURE B7C KIT", price: 50 },
+        { name: "NANLITE 60B 2-WAY KIT", price: 48 },
+        { name: "SOURCE 4 – W/ GOBO AND IRIS", price: 20 },
+        { name: "PAR CAN", price: 12 },
+      ]},
+      modifiers: { label: "Modifiers", items: [
+        { name: "NANLUX PARALLEL BEAM ADAPTER", price: 140 },
+        { name: "8X8 EGG CRATE", price: 60 },
+        { name: "HONEY CRATES 4X4 EGG CRATE", price: 40 },
+        { name: "APUTURE 150 DOME", price: 30 },
+        { name: "150 MODIFIER KIT", price: 25 },
+        { name: "F10 FRESNEL FOR 600X", price: 20 },
+        { name: "NANLITE 60C MODIFIER KIT", price: 20 },
+        { name: "APUTURE MINI DOME II", price: 15 },
+        { name: "TITAN ACCESSORIES KIT", price: 15 },
+        { name: "HONEY CRATE ASTERA 4FT", price: 8 },
+        { name: "FLOPPY FLAG 48X48", price: 6, default: 6 },
+        { name: "ULTRABOUNCE FLOPPY 48X48", price: 6, default: 2 },
+        { name: "TRACE FRAME 48X48", price: 4, default: 2 },
+      ]},
+      effects: { label: "Effects", items: [
+        { name: "CRLS DRIVE KIT", price: 225 },
+        { name: "CRLS 100 2.0 KIT", price: 200 },
+        { name: "CERISE 2U CRMX KIT w/ iPad Pro & Blackout", price: 200 },
+        { name: "DEDO EFLECT KIT", price: 90 },
+        { name: "UNIQUE 2.1 HAZER", price: 60 },
+        { name: "CRMX WIRELESS TRANSMITTER/RECEIVER KIT", price: 20 },
+        { name: "2.5K DIMMER", price: 10 },
+      ]},
+      power: { label: "Power", items: [
+        { name: "ECOFLOW 2000W BATTERY", price: 125 },
+        { name: "270WH x 6 V-LOCK KIT", price: 80, default: 1 },
+        { name: "16A 5M CABLE", price: 2.5, default: 8 },
+        { name: "16A 10M CABLE", price: 2.5, default: 8 },
+        { name: "16A 15M CABLE", price: 2.5, default: 6 },
+        { name: "13-16A JUMPER", price: 2, default: 8 },
+        { name: "16-13A PAD", price: 2, default: 8 },
+        { name: "16A Y-CORD", price: 2 },
+      ]},
+      stands: { label: "Stands", items: [
+        { name: "SUPER WIND UP", price: 25 },
+        { name: "DOUBLE WIND UP", price: 12, default: 3 },
+        { name: 'C-STAND 40" COMPLETE', price: 4, default: 10 },
+        { name: 'C-STAND 20" COMPLETE', price: 4, default: 3 },
+        { name: "DOUBLE RISER", price: 4, default: 2 },
+        { name: "TRIPLE RISER", price: 4, default: 3 },
+        { name: "LOW BOY", price: 4, default: 2 },
+        { name: "TURTLE", price: 4, default: 2 },
+      ]},
+      booms: { label: "Booms", items: [
+        { name: "MEGA BOOM", price: 25 },
+        { name: "JUNIOR BOOM", price: 10 },
+        { name: "BOOM POLE", price: 5 },
+        { name: "BABY BOOM", price: 5 },
+      ]},
+      grip: { label: "Grip", items: [
+        { name: "TREE BOX APPLE BOX FRENCH KIT", price: 20, default: 1 },
+        { name: "HONKA BONKA", price: 10 },
+        { name: 'CARDELLINI 9"', price: 4, default: 3 },
+        { name: 'CARDELLINI 6"', price: 4, default: 3 },
+        { name: 'CARDELLINI 3"', price: 4, default: 3 },
+        { name: "MAGIC ARM", price: 4, default: 4 },
+        { name: "SUPER CLAMP (K-CLAMP)", price: 4, default: 10 },
+        { name: "A CLAMP", price: 4, default: 8 },
+        { name: "SHOT BAGS", price: 2.5, default: 12 },
+        { name: "WATERPROOF SANDBAGS", price: 2.5, default: 4 },
+      ]},
+      textiles: { label: "Textiles & Frames", items: [
+        { name: "FLAG, NET, SILK KIT", price: 60, default: 1 },
+        { name: "12x12 MODULAR FRAME KIT", price: 44, default: 2 },
+        { name: "8x8 MODULAR FRAME KIT", price: 36, default: 2 },
+        { name: "12x12 FULL SILK", price: 35 },
+        { name: "12x12 SINGLE NET", price: 35 },
+        { name: "8x8 HALO FROST", price: 26 },
+        { name: "8x8 CHINA SILK", price: 25 },
+        { name: "8x8 1/2 SILK", price: 25 },
+        { name: "8x8 BLEACHED MUSLIN", price: 24 },
+        { name: "8x8 UNBLEACHED MUSLIN", price: 24 },
+        { name: "8x8 PERFORATED ULTRABOUNCE", price: 24 },
+        { name: "12x12 ULTRABOUNCE", price: 24, default: 2 },
+        { name: "12x12 BLACK SOLID", price: 24, default: 2 },
+        { name: "8x8 FULL GRID CLOTH", price: 20, default: 1 },
+        { name: "8x8 1/2 GRID CLOTH", price: 16, default: 1 },
+        { name: "8x8 1/4 GRID CLOTH", price: 16, default: 1 },
+        { name: "8x8 ULTRABOUNCE", price: 16, default: 1 },
+        { name: "8x8 BLACK SOLID", price: 16, default: 2 },
+        { name: "4x4 TEXTILE KIT", price: 10, default: 1 },
+      ]},
+      consumables: { label: "Consumables", excludeFromDiscount: true, items: [
+        { name: "BLACK WRAP", price: 47 },
+        { name: "FOAMCORE 4x4", price: 20 },
+        { name: "POLY 4x4", price: 15 },
+        { name: "POLY OFF CUTS", price: 10 },
+        { name: "FOAMCORE OFF CUTS", price: 10 },
+        { name: "BLACK GAFFER TAPE", price: 10 },
+        { name: "PRACTICAL BULB KIT", price: 10 },
+        { name: "BOLTON PER METRE", price: 9 },
+        { name: "MUSLIN PER METRE", price: 9 },
+        { name: "SASH HANK", price: 6 },
+      ]},
+    };
+
+    /* ───────────────── Storage adapter ───────────────── */
+    /* Uses localStorage when hosted on GitHub Pages — persistent across sessions. */
+    const storage = {
+      async get(key) {
+        try { const v = localStorage.getItem(key); return v ? { value: v } : null; }
+        catch (e) { return null; }
+      },
+      async set(key, value) { try { localStorage.setItem(key, value); } catch (e) {} },
+      async delete(key) { try { localStorage.removeItem(key); } catch (e) {} },
+    };
+
+    const STORAGE_KEY = "bigal:currentDraft";
+    const SAVED_INDEX_KEY = "bigal:savedIndex";
+    const SAVED_PREFIX = "bigal:saved:";
+    const QUOTE_VERSION = 2;
+
+    const money = (n) => {
+      if (isNaN(n) || n === null) n = 0;
+      return "£" + Number(n).toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+    const todayStr = () => new Date().toISOString().slice(0, 10);
+    const slug = (s) => (s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "untitled";
+    const itemId = (secKey, name) => `${secKey}-${slug(name)}`;
+    const computeDaysFromRange = (start, end) => {
+      if (!start || !end) return null;
+      const s = new Date(start); const e = new Date(end);
+      if (isNaN(s.getTime()) || isNaN(e.getTime()) || e < s) return null;
+      return Math.max(1, Math.floor((e - s) / 86400000) + 1);
+    };
+    const dateFmt = (d) => {
+      if (!d) return "";
+      try { return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }); }
+      catch { return d; }
+    };
+
+    function buildItems(defaultsOn) {
+      const items = {};
+      Object.entries(CATALOG).forEach(([secKey, sec]) => {
+        sec.items.forEach(item => {
+          const id = itemId(secKey, item.name);
+          items[id] = { section: secKey, name: item.name, price: item.price, days: 1, qty: defaultsOn ? (item.default || 0) : 0, custom: false };
+        });
+      });
+      return items;
+    }
+
+    const emptyQuote = (defaultsOn = true) => ({
+      version: QUOTE_VERSION, jobName: "", jobDate: todayStr(),
+      dateStart: "", dateEnd: "",
+      productionCompany: "", producer: "",
+      items: buildItems(defaultsOn),
+      discountPct: 30, deliveryPrice: 0, deliveryNote: "Delivery & Collect (London)",
+      gafferDays: 1, gafferRate: 568, vanDays: 1, vanRate: 110,
+      consumablesEstimate: 0, notes: "", defaultsOn,
+    });
+
+    function mergeSaved(saved) {
+      const fresh = emptyQuote(saved?.defaultsOn ?? true);
+      if (!saved) return fresh;
+      const freshItems = { ...fresh.items };
+      if (saved.items) {
+        Object.values(saved.items).forEach(oldIt => {
+          if (!oldIt || !oldIt.name) return;
+          if (oldIt.custom) {
+            const cid = `${oldIt.section}-custom-${slug(oldIt.name)}-${Math.random().toString(36).slice(2, 6)}`;
+            freshItems[cid] = { ...oldIt };
+            return;
+          }
+          const id = itemId(oldIt.section, oldIt.name);
+          if (freshItems[id]) freshItems[id] = { ...freshItems[id], qty: oldIt.qty, days: oldIt.days, price: oldIt.price ?? freshItems[id].price };
+        });
+      }
+      return { ...fresh, ...saved, items: freshItems, version: QUOTE_VERSION };
+    }
+
+    /* ──────────────────── PDF generation ──────────────────── */
+    async function generatePDF(quote, totals) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageW = 210, pageH = 297;
+      const mL = 15, mR = 15, mT = 15, mB = 15;
+      const contentW = pageW - mL - mR;
+      const COL_ITEM = mL;
+      const COL_PRICE = pageW - mR - 55;
+      const COL_DAYS = pageW - mR - 35;
+      const COL_QTY = pageW - mR - 20;
+      const COL_TOTAL = pageW - mR;
+
+      const BLUE = [37, 99, 235], BLUE_DARK = [29, 78, 216];
+      const DARK = [15, 23, 42], MID = [51, 65, 85];
+      const MUTED = [100, 116, 139], LINE = [226, 232, 240];
+
+      let y = mT;
+      const setText = (size, weight = "normal", color = DARK) => {
+        doc.setFontSize(size);
+        doc.setFont("helvetica", weight);
+        doc.setTextColor(color[0], color[1], color[2]);
+      };
+      const drawLine = (yy, color = LINE, width = 0.2) => {
+        doc.setDrawColor(color[0], color[1], color[2]);
+        doc.setLineWidth(width);
+        doc.line(mL, yy, pageW - mR, yy);
+      };
+      const ensureSpace = (needed) => {
+        if (y + needed > pageH - mB) { doc.addPage(); y = mT; return true; }
+        return false;
+      };
+
+      doc.setFillColor(BLUE[0], BLUE[1], BLUE[2]);
+      doc.circle(mL + 4, y + 4, 4, "F");
+      setText(8, "bold", BLUE_DARK);
+      doc.text("BIG AL'S LIGHTING EMPORIUM", mL + 11, y + 5.5);
+      y += 12;
+
+      setText(22, "normal", DARK);
+      doc.text(quote.jobName || "Quote", mL, y + 3);
+
+      setText(7, "bold", MUTED);
+      doc.text("QUOTE DATE", pageW - mR, y - 5, { align: "right" });
+      setText(10, "bold", DARK);
+      doc.text(dateFmt(quote.jobDate), pageW - mR, y, { align: "right" });
+
+      y += 7;
+      setText(9, "normal", MUTED);
+      doc.text("Lighting Quotation", mL, y);
+      y += 5;
+      drawLine(y, DARK, 0.6);
+      y += 6;
+
+      setText(7, "bold", MUTED);
+      doc.text("PRODUCTION", mL, y);
+      doc.text("PRODUCER", mL + contentW / 2, y);
+      y += 4;
+      setText(10, "bold", DARK);
+      doc.text(quote.productionCompany || "—", mL, y);
+      doc.text(quote.producer || "—", mL + contentW / 2, y);
+      y += 7;
+
+      if (quote.dateStart) {
+        let dateText = dateFmt(quote.dateStart);
+        if (quote.dateEnd) {
+          const days = computeDaysFromRange(quote.dateStart, quote.dateEnd);
+          dateText = `${dateFmt(quote.dateStart)} → ${dateFmt(quote.dateEnd)}  ·  ${days} day${days !== 1 ? "s" : ""}`;
+        }
+        setText(7, "bold", MUTED);
+        doc.text("SHOOT DATES", mL, y);
+        y += 4;
+        setText(10, "bold", DARK);
+        doc.text(dateText, mL, y);
+        y += 7;
+      }
+
+      y += 3;
+
+      const drawSectionHeader = (label, noDiscount) => {
+        ensureSpace(14);
+        setText(10, "bold", DARK);
+        doc.text(label.toUpperCase(), mL, y);
+        if (noDiscount) {
+          setText(7, "normal", MUTED);
+          doc.text("NO DISCOUNT APPLIED", pageW - mR, y, { align: "right" });
+        }
+        y += 2;
+        drawLine(y, [148, 163, 184], 0.4);
+        y += 4;
+        setText(7, "bold", MUTED);
+        doc.text("ITEM", COL_ITEM, y);
+        doc.text("PRICE", COL_PRICE, y, { align: "right" });
+        doc.text("DAYS", COL_DAYS, y, { align: "center" });
+        doc.text("QTY", COL_QTY, y, { align: "center" });
+        doc.text("TOTAL", COL_TOTAL, y, { align: "right" });
+        y += 3;
+      };
+
+      const drawRow = (name, price, days, qty, total) => {
+        setText(9, "normal", DARK);
+        const nameLines = doc.splitTextToSize(name, 95);
+        const rowH = Math.max(5, nameLines.length * 4 + 1);
+        if (y + rowH > pageH - mB) { doc.addPage(); y = mT; }
+        nameLines.forEach((line, i) => doc.text(line, COL_ITEM, y + i * 4));
+        const baseY = y;
+        setText(9, "normal", MID);
+        if (price !== null) doc.text(price, COL_PRICE, baseY, { align: "right" });
+        if (days !== null) doc.text(String(days), COL_DAYS, baseY, { align: "center" });
+        if (qty !== null) doc.text(String(qty), COL_QTY, baseY, { align: "center" });
+        setText(9, "bold", DARK);
+        doc.text(total, COL_TOTAL, baseY, { align: "right" });
+        y += rowH;
+        doc.setDrawColor(LINE[0], LINE[1], LINE[2]);
+        doc.setLineWidth(0.15);
+        doc.line(mL, y - 0.5, pageW - mR, y - 0.5);
+      };
+
+      Object.entries(CATALOG).forEach(([secKey, sec]) => {
+        const picked = Object.values(quote.items).filter(it => it.section === secKey && Number(it.qty) > 0);
+        if (picked.length === 0) return;
+        drawSectionHeader(sec.label, !!sec.excludeFromDiscount);
+        picked.forEach(it => {
+          const line = Number(it.price) * Number(it.days) * Number(it.qty);
+          drawRow(it.name, money(it.price), it.days, it.qty, money(line));
+        });
+        y += 5;
+      });
+
+      const hasServices = totals.gaffer > 0 || totals.van > 0 || totals.delivery > 0 || totals.consumablesEst > 0;
+      if (hasServices) {
+        drawSectionHeader("Services & Transport", true);
+        if (totals.gaffer > 0) drawRow("Gaffer day rate", money(quote.gafferRate), quote.gafferDays, null, money(totals.gaffer));
+        if (totals.van > 0) drawRow("Van day rate", money(quote.vanRate), quote.vanDays, null, money(totals.van));
+        if (totals.delivery > 0) drawRow(quote.deliveryNote || "Delivery", null, null, null, money(totals.delivery));
+        if (totals.consumablesEst > 0) drawRow("Consumables estimate (charged as used)", null, null, null, money(totals.consumablesEst));
+        y += 5;
+      }
+
+      ensureSpace(50);
+      drawLine(y, DARK, 0.6);
+      y += 6;
+      const tLabelX = pageW - mR - 70, tValueX = pageW - mR;
+      const totalRow = (label, value, opts = {}) => {
+        const { bold = false, muted = false } = opts;
+        ensureSpace(6);
+        setText(9, bold ? "bold" : "normal", muted ? MUTED : DARK);
+        doc.text(label, tLabelX, y);
+        doc.text(money(value), tValueX, y, { align: "right" });
+        y += 5;
+      };
+      totalRow("Kit subtotal", totals.discountable);
+      if (totals.discountPct > 0) {
+        totalRow(`Discount (${totals.discountPct}%)`, -(totals.discountable - totals.kitAfterDiscount), { muted: true });
+        totalRow("Kit after discount", totals.kitAfterDiscount, { bold: true });
+      }
+      if (totals.services > 0) totalRow("Services & transport", totals.services);
+      if ((totals.consumablesPicked + totals.consumablesEst) > 0) {
+        totalRow("Consumables", totals.consumablesPicked + totals.consumablesEst);
+      }
+
+      y += 1;
+      doc.setDrawColor(DARK[0], DARK[1], DARK[2]);
+      doc.setLineWidth(0.6);
+      doc.line(tLabelX - 5, y, tValueX, y);
+      y += 6;
+      setText(8, "bold", DARK);
+      doc.text("TOTAL", tLabelX, y + 3);
+      setText(20, "bold", BLUE_DARK);
+      doc.text(money(totals.grandTotal), tValueX, y + 4, { align: "right" });
+      y += 14;
+
+      if (quote.notes && quote.notes.trim()) {
+        ensureSpace(16);
+        y += 3;
+        drawLine(y, LINE, 0.3);
+        y += 5;
+        setText(7, "bold", MUTED);
+        doc.text("NOTES", mL, y);
+        y += 4;
+        setText(9, "normal", MID);
+        const lines = doc.splitTextToSize(quote.notes, contentW);
+        lines.forEach(line => { ensureSpace(5); doc.text(line, mL, y); y += 4.5; });
+      }
+
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        setText(7, "normal", MUTED);
+        doc.text("Cross hires available on request · Consumables charged as used", mL, pageH - 8);
+        doc.text("Big Al's Lighting Emporium", pageW - mR, pageH - 8, { align: "right" });
+        doc.text(`Page ${i} of ${pageCount}`, pageW / 2, pageH - 8, { align: "center" });
+      }
+
+      const safeName = slug(quote.jobName || "quote");
+      doc.save(`bigal-${safeName}-${todayStr()}.pdf`);
+    }
+
+    /* ──────────────────── Components ──────────────────── */
+    function Field({ label, value, onChange, type = "text", placeholder }) {
+      return (
+        <label className="block">
+          <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 font-semibold mb-1.5">{label}</div>
+          <input type={type} value={value || ""} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+            className="w-full px-3 py-2.5 bg-slate-50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:bg-white transition" />
+        </label>
+      );
+    }
+
+    function Modal({ children, onClose, title }) {
+      return (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <h3 className="font-serif text-lg" style={{ fontFamily: "'Fraunces', serif" }}>{title}</h3>
+              <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100"><XIcon size={20} /></button>
+            </div>
+            <div className="p-5">{children}</div>
+          </div>
+        </div>
+      );
+    }
+
+    function ItemRow({ id, item, onChange, onDelete }) {
+      const line = Number(item.price) * Number(item.days) * Number(item.qty);
+      return (
+        <div className="px-4 py-3 grid grid-cols-12 gap-2 items-center hover:bg-slate-50/50 transition">
+          <div className="col-span-12 sm:col-span-5 min-w-0">
+            {item.custom ? (
+              <input value={item.name} onChange={e => onChange({ name: e.target.value })}
+                className="w-full text-sm font-medium bg-transparent focus:outline-none focus:bg-slate-100 rounded px-2 py-1.5 -mx-2" />
+            ) : (<div className="text-sm font-medium truncate" title={item.name}>{item.name}</div>)}
+          </div>
+          <div className="col-span-4 sm:col-span-2 flex items-center gap-1">
+            <span className="text-slate-400 text-xs">£</span>
+            <input type="number" min="0" step="0.01" value={item.price}
+              onChange={e => onChange({ price: parseFloat(e.target.value) || 0 })}
+              className="w-full px-2 py-1.5 bg-slate-50 rounded text-right tabular-nums text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              style={{ fontFamily: "'JetBrains Mono', monospace" }} />
+          </div>
+          <div className="col-span-4 sm:col-span-1">
+            <input type="number" min="0" step="1" value={item.days}
+              onChange={e => onChange({ days: parseInt(e.target.value) || 0 })}
+              className="w-full px-2 py-1.5 bg-slate-50 rounded text-center tabular-nums text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              style={{ fontFamily: "'JetBrains Mono', monospace" }} title="Days" />
+          </div>
+          <div className="col-span-4 sm:col-span-2 flex items-center justify-center">
+            <div className="flex items-center bg-slate-100 rounded-lg overflow-hidden">
+              <button onClick={() => onChange({ qty: Math.max(0, Number(item.qty) - 1) })}
+                className="w-9 h-9 flex items-center justify-center hover:bg-slate-200 active:bg-slate-300"><MinusIcon size={16} /></button>
+              <input type="number" min="0" step="1" value={item.qty}
+                onChange={e => onChange({ qty: Math.max(0, parseInt(e.target.value) || 0) })}
+                className="w-12 h-9 text-center bg-transparent tabular-nums font-semibold text-sm focus:outline-none"
+                style={{ fontFamily: "'JetBrains Mono', monospace" }} />
+              <button onClick={() => onChange({ qty: Number(item.qty) + 1 })}
+                className="w-9 h-9 flex items-center justify-center hover:bg-slate-200 active:bg-slate-300"><PlusIcon size={16} /></button>
+            </div>
+          </div>
+          <div className="col-span-10 sm:col-span-1 text-right tabular-nums text-sm font-semibold"
+            style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+            {line > 0 ? money(line) : <span className="text-slate-300">—</span>}
+          </div>
+          <div className="col-span-2 sm:col-span-1 flex justify-end">
+            {onDelete && (
+              <button onClick={onDelete} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded">
+                <TrashIcon size={16} />
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    function ServiceRow({ name, price, days, onPrice, onDays }) {
+      const line = Number(price) * Number(days);
+      return (
+        <div className="px-4 py-3 grid grid-cols-12 gap-2 items-center">
+          <div className="col-span-12 sm:col-span-5 text-sm font-medium">{name}</div>
+          <div className="col-span-4 sm:col-span-3 flex items-center gap-1">
+            <span className="text-slate-400 text-xs">£</span>
+            <input type="number" min="0" step="0.01" value={price}
+              onChange={e => onPrice(parseFloat(e.target.value) || 0)}
+              className="w-full px-2 py-1.5 bg-slate-50 rounded text-right tabular-nums text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              style={{ fontFamily: "'JetBrains Mono', monospace" }} />
+          </div>
+          <div className="col-span-4 sm:col-span-2">
+            <div className="flex items-center bg-slate-100 rounded-lg overflow-hidden">
+              <button onClick={() => onDays(Math.max(0, Number(days) - 1))}
+                className="w-8 h-8 flex items-center justify-center hover:bg-slate-200"><MinusIcon size={16} /></button>
+              <input type="number" min="0" value={days}
+                onChange={e => onDays(Math.max(0, parseInt(e.target.value) || 0))}
+                className="w-10 h-8 text-center bg-transparent tabular-nums text-sm focus:outline-none"
+                style={{ fontFamily: "'JetBrains Mono', monospace" }} />
+              <button onClick={() => onDays(Number(days) + 1)}
+                className="w-8 h-8 flex items-center justify-center hover:bg-slate-200"><PlusIcon size={16} /></button>
+            </div>
+            <div className="text-[10px] text-slate-400 mt-0.5 text-center">days</div>
+          </div>
+          <div className="col-span-4 sm:col-span-2 text-right tabular-nums font-semibold text-sm"
+            style={{ fontFamily: "'JetBrains Mono', monospace" }}>{money(line)}</div>
+        </div>
+      );
+    }
+
+    function TotalRow({ label, value, muted, bold }) {
+      return (
+        <div className={`flex items-baseline justify-between ${bold ? "font-semibold" : ""} ${muted ? "text-slate-500" : ""}`}>
+          <span className="text-sm">{label}</span>
+          <span className="tabular-nums" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{money(value)}</span>
+        </div>
+      );
+    }
+
+    function PreviewView({ quote, totals, onBack, onDownload, downloading }) {
+      const groupedSections = useMemo(() => {
+        const out = [];
+        Object.entries(CATALOG).forEach(([secKey, sec]) => {
+          const picked = Object.entries(quote.items).filter(([_, it]) => it.section === secKey && Number(it.qty) > 0);
+          if (picked.length > 0) out.push({ secKey, sec, picked });
+        });
+        return out;
+      }, [quote.items]);
+
+      const shootRange = useMemo(() => {
+        if (quote.dateStart && quote.dateEnd) {
+          const days = computeDaysFromRange(quote.dateStart, quote.dateEnd);
+          return `${dateFmt(quote.dateStart)} → ${dateFmt(quote.dateEnd)}  ·  ${days} day${days !== 1 ? "s" : ""}`;
+        }
+        if (quote.dateStart) return dateFmt(quote.dateStart);
+        return null;
+      }, [quote.dateStart, quote.dateEnd]);
+
+      return (
+        <div className="min-h-screen bg-slate-100 text-slate-900">
+          <div className="sticky top-0 z-30 bg-slate-900 text-slate-50 safe-top">
+            <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+              <button onClick={onBack} className="h-10 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-medium flex items-center gap-2">
+                <EditIcon size={16} /> Back to edit
+              </button>
+              <button onClick={onDownload} disabled={downloading}
+                className="h-10 px-4 rounded-lg bg-blue-500 text-white hover:bg-blue-400 disabled:opacity-70 text-sm font-semibold flex items-center gap-2">
+                {downloading ? <LoaderIcon size={16} /> : <DownloadIcon size={16} />}
+                {downloading ? "Building PDF…" : "Download PDF"}
+              </button>
+            </div>
+          </div>
+
+          <div className="max-w-4xl mx-auto py-8 px-4 safe-bottom">
+            <div className="bg-white shadow-xl p-6 sm:p-10">
+              <div className="flex items-start justify-between mb-8 pb-6 border-b-2 border-slate-900">
+                <div>
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+                      <BulbIcon size={16} className="text-white" />
+                    </div>
+                    <div className="text-xs uppercase tracking-[0.22em] font-bold text-blue-700">Big Al's Lighting Emporium</div>
+                  </div>
+                  <h1 className="text-4xl font-serif leading-tight mb-1" style={{ fontFamily: "'Fraunces', serif", fontWeight: 450 }}>
+                    {quote.jobName || "Quote"}
+                  </h1>
+                  <div className="text-sm text-slate-500">Lighting Quotation</div>
+                </div>
+                <div className="text-right text-xs space-y-0.5">
+                  <div className="uppercase tracking-widest text-slate-400 font-semibold">Quote date</div>
+                  <div className="text-sm font-semibold">{dateFmt(quote.jobDate)}</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-8 mb-3 text-sm">
+                <div>
+                  <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-1">Production</div>
+                  <div className="font-semibold">{quote.productionCompany || "—"}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-1">Producer</div>
+                  <div className="font-semibold">{quote.producer || "—"}</div>
+                </div>
+              </div>
+              {shootRange && (
+                <div className="mb-8 text-sm">
+                  <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-1">Shoot dates</div>
+                  <div className="font-semibold">{shootRange}</div>
+                </div>
+              )}
+
+              {groupedSections.map(({ secKey, sec, picked }) => (
+                <div key={secKey} className="mb-6">
+                  <div className="flex items-baseline justify-between mb-2 pb-1 border-b border-slate-200">
+                    <h2 className="text-sm uppercase tracking-[0.15em] font-bold" style={{ fontFamily: "'Fraunces', serif" }}>{sec.label}</h2>
+                    {sec.excludeFromDiscount && (<span className="text-[9px] uppercase tracking-widest text-slate-500">No discount applied</span>)}
+                  </div>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-[10px] uppercase tracking-wider text-slate-400">
+                        <th className="text-left font-semibold py-1">Item</th>
+                        <th className="text-right font-semibold py-1 w-20">Price</th>
+                        <th className="text-center font-semibold py-1 w-12">Days</th>
+                        <th className="text-center font-semibold py-1 w-12">Qty</th>
+                        <th className="text-right font-semibold py-1 w-24">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {picked.map(([id, it]) => (
+                        <tr key={id} className="border-t border-slate-100">
+                          <td className="py-2 pr-2">{it.name}</td>
+                          <td className="text-right tabular-nums" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{money(it.price)}</td>
+                          <td className="text-center tabular-nums" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{it.days}</td>
+                          <td className="text-center tabular-nums" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{it.qty}</td>
+                          <td className="text-right tabular-nums font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                            {money(Number(it.price) * Number(it.days) * Number(it.qty))}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ))}
+
+              <div className="mb-6">
+                <div className="flex items-baseline justify-between mb-2 pb-1 border-b border-slate-200">
+                  <h2 className="text-sm uppercase tracking-[0.15em] font-bold" style={{ fontFamily: "'Fraunces', serif" }}>Services & Transport</h2>
+                  <span className="text-[9px] uppercase tracking-widest text-slate-500">No discount applied</span>
+                </div>
+                <table className="w-full text-sm">
+                  <tbody>
+                    {totals.gaffer > 0 && (
+                      <tr className="border-t border-slate-100">
+                        <td className="py-2">Gaffer day rate</td>
+                        <td className="text-right tabular-nums w-20" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{money(quote.gafferRate)}</td>
+                        <td className="text-center tabular-nums w-12" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{quote.gafferDays}</td>
+                        <td className="w-12"></td>
+                        <td className="text-right tabular-nums font-semibold w-24" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{money(totals.gaffer)}</td>
+                      </tr>
+                    )}
+                    {totals.van > 0 && (
+                      <tr className="border-t border-slate-100">
+                        <td className="py-2">Van day rate</td>
+                        <td className="text-right tabular-nums w-20" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{money(quote.vanRate)}</td>
+                        <td className="text-center tabular-nums w-12" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{quote.vanDays}</td>
+                        <td className="w-12"></td>
+                        <td className="text-right tabular-nums font-semibold w-24" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{money(totals.van)}</td>
+                      </tr>
+                    )}
+                    {totals.delivery > 0 && (
+                      <tr className="border-t border-slate-100">
+                        <td className="py-2" colSpan={4}>{quote.deliveryNote || "Delivery"}</td>
+                        <td className="text-right tabular-nums font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{money(totals.delivery)}</td>
+                      </tr>
+                    )}
+                    {totals.consumablesEst > 0 && (
+                      <tr className="border-t border-slate-100">
+                        <td className="py-2" colSpan={4}>Consumables estimate <span className="text-slate-400 text-xs">(charged as used)</span></td>
+                        <td className="text-right tabular-nums font-semibold" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{money(totals.consumablesEst)}</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-8 pt-6 border-t-2 border-slate-900">
+                <div className="ml-auto max-w-sm space-y-2 text-sm">
+                  <TotalRow label="Kit subtotal" value={totals.discountable} />
+                  {totals.discountPct > 0 && (
+                    <>
+                      <TotalRow label={`Discount (${totals.discountPct}%)`} value={-(totals.discountable - totals.kitAfterDiscount)} muted />
+                      <TotalRow label="Kit after discount" value={totals.kitAfterDiscount} bold />
+                    </>
+                  )}
+                  {totals.services > 0 && <TotalRow label="Services & transport" value={totals.services} />}
+                  {(totals.consumablesPicked + totals.consumablesEst) > 0 && (
+                    <TotalRow label="Consumables" value={totals.consumablesPicked + totals.consumablesEst} />
+                  )}
+                  <div className="flex items-baseline justify-between pt-3 mt-2 border-t-2 border-slate-900">
+                    <div className="text-xs uppercase tracking-[0.2em] font-bold">Total</div>
+                    <div className="text-3xl font-serif tabular-nums text-blue-700" style={{ fontFamily: "'Fraunces', serif" }}>
+                      {money(totals.grandTotal)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {quote.notes && (
+                <div className="mt-8 pt-6 border-t border-slate-200 text-sm text-slate-600 whitespace-pre-wrap">
+                  <div className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-1">Notes</div>
+                  {quote.notes}
+                </div>
+              )}
+
+              <div className="mt-10 pt-4 border-t border-slate-200 text-[11px] text-slate-500 flex justify-between">
+                <span>Cross hires available on request · Consumables charged as used</span>
+                <span>Big Al's Lighting Emporium</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function QuoteGenerator() {
+      const [quote, setQuote] = useState(() => emptyQuote(true));
+      const [mode, setMode] = useState("edit");
+      const [openSections, setOpenSections] = useState({ lights: true });
+      const [targetTotalInput, setTargetTotalInput] = useState("");
+      const [discountEditMode, setDiscountEditMode] = useState("percent");
+      const [savedList, setSavedList] = useState([]);
+      const [showSaveDialog, setShowSaveDialog] = useState(false);
+      const [showLoadDialog, setShowLoadDialog] = useState(false);
+      const [saveName, setSaveName] = useState("");
+      const [toast, setToast] = useState(null);
+      const [globalDays, setGlobalDays] = useState(1);
+      const [downloading, setDownloading] = useState(false);
+      const saveDebounce = useRef(null);
+
+      useEffect(() => {
+        (async () => {
+          try {
+            const r = await storage.get(STORAGE_KEY);
+            if (r && r.value) setQuote(mergeSaved(JSON.parse(r.value)));
+          } catch (e) {}
+          try {
+            const r = await storage.get(SAVED_INDEX_KEY);
+            if (r && r.value) setSavedList(JSON.parse(r.value));
+          } catch (e) {}
+        })();
+      }, []);
+
+      useEffect(() => {
+        if (saveDebounce.current) clearTimeout(saveDebounce.current);
+        saveDebounce.current = setTimeout(async () => {
+          try { await storage.set(STORAGE_KEY, JSON.stringify(quote)); } catch (e) {}
+        }, 600);
+        return () => clearTimeout(saveDebounce.current);
+      }, [quote]);
+
+      useEffect(() => {
+        const d = computeDaysFromRange(quote.dateStart, quote.dateEnd);
+        if (d) setGlobalDays(d);
+      }, [quote.dateStart, quote.dateEnd]);
+
+      const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2200); };
+      const update = (patch) => setQuote(q => ({ ...q, ...patch }));
+      const updateItem = (id, patch) => setQuote(q => ({ ...q, items: { ...q.items, [id]: { ...q.items[id], ...patch } } }));
+      const deleteItem = (id) => setQuote(q => { const next = { ...q.items }; delete next[id]; return { ...q, items: next }; });
+      const addCustomItem = (section) => {
+        const id = `${section}-custom-${Date.now()}`;
+        setQuote(q => ({ ...q, items: { ...q.items, [id]: { section, name: "New item", price: 0, days: globalDays || 1, qty: 1, custom: true } } }));
+      };
+
+      const applyGlobalDays = () => {
+        const d = Math.max(0, Number(globalDays) || 0);
+        setQuote(q => {
+          const next = {};
+          Object.entries(q.items).forEach(([id, it]) => { next[id] = { ...it, days: d }; });
+          return { ...q, items: next, gafferDays: d, vanDays: d };
+        });
+        showToast(`Applied ${d} day${d !== 1 ? "s" : ""} to all`);
+      };
+
+      const toggleDefaults = () => {
+        const turningOn = !quote.defaultsOn;
+        setQuote(q => {
+          const next = {};
+          Object.entries(q.items).forEach(([id, it]) => {
+            if (it.custom) { next[id] = { ...it, qty: turningOn ? it.qty : 0 }; return; }
+            const catalogItem = CATALOG[it.section]?.items.find(c => c.name === it.name);
+            const defaultQty = catalogItem?.default || 0;
+            next[id] = { ...it, qty: turningOn ? defaultQty : 0 };
+          });
+          return { ...q, items: next, defaultsOn: turningOn };
+        });
+        showToast(turningOn ? "Defaults loaded" : "Cleared — all items set to 0");
+      };
+
+      const totals = useMemo(() => {
+        let discountable = 0, consumablesPicked = 0;
+        Object.values(quote.items).forEach(it => {
+          const line = Number(it.price) * Number(it.days) * Number(it.qty);
+          if (CATALOG[it.section]?.excludeFromDiscount) consumablesPicked += line;
+          else discountable += line;
+        });
+        const discountPct = Math.max(0, Math.min(100, Number(quote.discountPct) || 0));
+        const kitAfterDiscount = discountable * (1 - discountPct / 100);
+        const gaffer = Number(quote.gafferRate) * Number(quote.gafferDays);
+        const van = Number(quote.vanRate) * Number(quote.vanDays);
+        const delivery = Number(quote.deliveryPrice) || 0;
+        const consumablesEst = Number(quote.consumablesEstimate) || 0;
+        const services = gaffer + van + delivery;
+        const nonDiscountable = consumablesPicked + consumablesEst + services;
+        return { discountable, discountPct, kitAfterDiscount, consumablesPicked, consumablesEst,
+          gaffer, van, delivery, services, nonDiscountable, grandTotal: kitAfterDiscount + nonDiscountable };
+      }, [quote]);
+
+      const applyTargetTotal = () => {
+        const target = parseFloat(targetTotalInput);
+        if (isNaN(target) || totals.discountable <= 0) return;
+        const kitNeeded = target - totals.nonDiscountable;
+        if (kitNeeded <= 0) update({ discountPct: 100 });
+        else {
+          const pct = Math.max(0, Math.min(100, (1 - kitNeeded / totals.discountable) * 100));
+          update({ discountPct: +pct.toFixed(2) });
+        }
+      };
+
+      const saveQuote = async () => {
+        const name = (saveName || quote.jobName || "Untitled").trim();
+        if (!name) return;
+        const id = `${slug(name)}-${Date.now().toString(36)}`;
+        try {
+          await storage.set(SAVED_PREFIX + id, JSON.stringify(quote));
+          const entry = { id, name, date: new Date().toISOString(), total: totals.grandTotal };
+          const next = [entry, ...savedList.filter(s => s.id !== id)].slice(0, 50);
+          await storage.set(SAVED_INDEX_KEY, JSON.stringify(next));
+          setSavedList(next);
+          setShowSaveDialog(false);
+          setSaveName("");
+          showToast(`Saved "${name}"`);
+        } catch (e) { showToast("Save failed"); }
+      };
+
+      const loadSaved = async (id) => {
+        try {
+          const r = await storage.get(SAVED_PREFIX + id);
+          if (r && r.value) { setQuote(mergeSaved(JSON.parse(r.value))); setShowLoadDialog(false); showToast("Loaded"); }
+        } catch (e) { showToast("Load failed"); }
+      };
+
+      const deleteSaved = async (id) => {
+        try {
+          await storage.delete(SAVED_PREFIX + id);
+          const next = savedList.filter(s => s.id !== id);
+          await storage.set(SAVED_INDEX_KEY, JSON.stringify(next));
+          setSavedList(next);
+        } catch (e) {}
+      };
+
+      const newQuote = () => {
+        if (!confirm("Start a new quote? Current unsaved changes will be lost unless you've saved them.")) return;
+        setQuote(emptyQuote(true)); setTargetTotalInput(""); setGlobalDays(1);
+        showToast("New quote started");
+      };
+
+      const handleDownloadPDF = async () => {
+        if (downloading) return;
+        setDownloading(true);
+        showToast("Building PDF…");
+        try {
+          await generatePDF(quote, totals);
+          showToast("PDF downloaded");
+        } catch (e) {
+          console.error(e);
+          showToast("PDF failed — check your connection");
+        } finally { setDownloading(false); }
+      };
+
+      const sectionPicked = (secKey) => Object.values(quote.items).filter(it => it.section === secKey && Number(it.qty) > 0).length;
+      const sectionSubtotal = (secKey) => Object.values(quote.items).filter(it => it.section === secKey)
+        .reduce((s, it) => s + Number(it.price) * Number(it.days) * Number(it.qty), 0);
+
+      if (mode === "preview") {
+        return <PreviewView quote={quote} totals={totals} onBack={() => setMode("edit")} onDownload={handleDownloadPDF} downloading={downloading} />;
+      }
+
+      return (
+        <div className="min-h-screen bg-slate-50 text-slate-900">
+          <header className="sticky top-0 z-30 bg-slate-900 text-slate-50 safe-top">
+            <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                  <BulbIcon size={20} className="text-slate-50" />
+                </div>
+                <div className="leading-tight">
+                  <div className="text-[10px] uppercase tracking-[0.18em] text-blue-300 font-semibold">Big Al's Lighting Emporium</div>
+                  <div className="text-lg font-serif" style={{ fontFamily: "'Fraunces', serif", fontWeight: 450 }}>Quote Builder</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setShowLoadDialog(true)}
+                  className="h-10 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-medium flex items-center gap-2 transition">
+                  <FolderIcon size={16} /><span className="hidden sm:inline">Open</span>
+                </button>
+                <button onClick={() => { setSaveName(quote.jobName || ""); setShowSaveDialog(true); }}
+                  className="h-10 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-medium flex items-center gap-2 transition">
+                  <SaveIcon size={16} /><span className="hidden sm:inline">Save</span>
+                </button>
+                <button onClick={() => setMode("preview")}
+                  className="h-10 px-4 rounded-lg bg-blue-500 text-white hover:bg-blue-400 text-sm font-semibold flex items-center gap-2 transition">
+                  <EyeIcon size={16} /><span>Preview</span>
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <main className="max-w-6xl mx-auto px-4 pb-56 pt-6 space-y-6">
+
+            <section className="bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden">
+              <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+                <h2 className="text-xs uppercase tracking-[0.18em] text-slate-500 font-semibold">Job Details</h2>
+                <button onClick={newQuote} className="text-xs text-slate-500 hover:text-slate-900 flex items-center gap-1">
+                  <RotateIcon size={12} /> New
+                </button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5">
+                <Field label="Job name" value={quote.jobName} onChange={v => update({ jobName: v })} placeholder="Dove Commercial" />
+                <Field label="Quote date" type="date" value={quote.jobDate} onChange={v => update({ jobDate: v })} />
+                <Field label="Production company" value={quote.productionCompany} onChange={v => update({ productionCompany: v })} placeholder="Merman London" />
+                <Field label="Producer" value={quote.producer} onChange={v => update({ producer: v })} placeholder="Producer name" />
+              </div>
+            </section>
+
+            <section className="bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden">
+              <div className="px-5 py-3 border-b border-slate-100 flex items-center gap-2">
+                <CalendarIcon size={16} className="text-slate-400" />
+                <h2 className="text-xs uppercase tracking-[0.18em] text-slate-500 font-semibold">Schedule & Defaults</h2>
+              </div>
+              <div className="p-5 space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                  <Field label="Shoot start" type="date" value={quote.dateStart} onChange={v => update({ dateStart: v })} />
+                  <Field label="Shoot end" type="date" value={quote.dateEnd} onChange={v => update({ dateEnd: v })} />
+                  <div>
+                    <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 font-semibold mb-1.5">Days</div>
+                    <div className="flex items-center bg-slate-100 rounded-lg overflow-hidden">
+                      <button onClick={() => setGlobalDays(d => Math.max(0, Number(d) - 1))}
+                        className="w-10 h-11 flex items-center justify-center hover:bg-slate-200"><MinusIcon size={16} /></button>
+                      <input type="number" min="0" value={globalDays}
+                        onChange={e => setGlobalDays(Math.max(0, parseInt(e.target.value) || 0))}
+                        className="flex-1 h-11 text-center bg-transparent tabular-nums font-semibold focus:outline-none"
+                        style={{ fontFamily: "'JetBrains Mono', monospace" }} />
+                      <button onClick={() => setGlobalDays(d => Number(d) + 1)}
+                        className="w-10 h-11 flex items-center justify-center hover:bg-slate-200"><PlusIcon size={16} /></button>
+                    </div>
+                  </div>
+                </div>
+                <button onClick={applyGlobalDays}
+                  className="w-full sm:w-auto px-4 py-2.5 bg-slate-900 text-white rounded-lg text-sm font-semibold hover:bg-slate-800 transition flex items-center gap-2 justify-center">
+                  <CheckIcon size={16} /> Apply {globalDays} day{globalDays !== 1 ? "s" : ""} to all items
+                </button>
+
+                <div className="border-t border-slate-100 pt-5 flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="text-sm font-semibold mb-0.5">Default kit</div>
+                    <div className="text-xs text-slate-500">
+                      Pre-loads our standard kit (floppies, c-stands, cardellinis, grid cloth, and so on). Turn off to start from zero.
+                    </div>
+                  </div>
+                  <button onClick={toggleDefaults} role="switch" aria-checked={quote.defaultsOn}
+                    className={`relative w-14 h-8 rounded-full transition-colors shrink-0 ${quote.defaultsOn ? "bg-blue-500" : "bg-slate-300"}`}>
+                    <span className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow transition-transform ${quote.defaultsOn ? "translate-x-6" : "translate-x-0"}`} />
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            {Object.entries(CATALOG).map(([secKey, sec]) => {
+              const isOpen = !!openSections[secKey];
+              const picked = sectionPicked(secKey);
+              const sub = sectionSubtotal(secKey);
+              const isConsumable = !!sec.excludeFromDiscount;
+              const sectionItems = Object.entries(quote.items).filter(([_, it]) => it.section === secKey);
+              return (
+                <section key={secKey} className="bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden">
+                  <button onClick={() => setOpenSections(o => ({ ...o, [secKey]: !isOpen }))}
+                    className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition text-left">
+                    <div className="flex items-center gap-3">
+                      {isOpen ? <ChevDownIcon size={20} className="text-slate-400" /> : <ChevRightIcon size={20} className="text-slate-400" />}
+                      <h3 className="text-lg font-serif" style={{ fontFamily: "'Fraunces', serif" }}>{sec.label}</h3>
+                      {isConsumable && (<span className="text-[9px] uppercase tracking-widest font-bold bg-slate-900 text-blue-300 px-2 py-0.5 rounded">No discount</span>)}
+                    </div>
+                    <div className="flex items-center gap-4 text-sm">
+                      {picked > 0 && <span className="text-slate-500 tabular-nums">{picked} item{picked !== 1 ? "s" : ""}</span>}
+                      {sub > 0 && <span className="font-semibold tabular-nums" style={{ fontFamily: "'JetBrains Mono', monospace" }}>{money(sub)}</span>}
+                    </div>
+                  </button>
+                  {isOpen && (
+                    <div className="border-t border-slate-100">
+                      {sectionItems.map(([id, it]) => (
+                        <ItemRow key={id} id={id} item={it} onChange={patch => updateItem(id, patch)}
+                          onDelete={it.custom ? () => deleteItem(id) : null} />
+                      ))}
+                      <div className="px-4 py-3 border-t border-slate-100">
+                        <button onClick={() => addCustomItem(secKey)}
+                          className="text-sm text-blue-700 hover:text-blue-800 font-medium flex items-center gap-1">
+                          <PlusIcon size={16} /> Add custom item
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </section>
+              );
+            })}
+
+            <section className="bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden">
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3">
+                <h3 className="text-lg font-serif" style={{ fontFamily: "'Fraunces', serif" }}>Services & Transport</h3>
+                <span className="text-[9px] uppercase tracking-widest font-bold bg-slate-900 text-blue-300 px-2 py-0.5 rounded">No discount</span>
+              </div>
+              <div className="divide-y divide-slate-100">
+                <ServiceRow name="Gaffer day rate" price={quote.gafferRate} days={quote.gafferDays}
+                  onPrice={v => update({ gafferRate: v })} onDays={v => update({ gafferDays: v })} />
+                <ServiceRow name="Van day rate" price={quote.vanRate} days={quote.vanDays}
+                  onPrice={v => update({ vanRate: v })} onDays={v => update({ vanDays: v })} />
+                <div className="px-4 py-3 grid grid-cols-12 gap-3 items-center">
+                  <div className="col-span-12 sm:col-span-6">
+                    <input className="w-full text-sm font-medium bg-transparent focus:outline-none focus:bg-slate-50 rounded px-2 py-1.5 -mx-2"
+                      value={quote.deliveryNote} onChange={e => update({ deliveryNote: e.target.value })} placeholder="Delivery note" />
+                    <div className="text-[11px] text-slate-400 mt-0.5">Usually £0 — set an amount if charging</div>
+                  </div>
+                  <div className="col-span-12 sm:col-span-6 flex justify-end">
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400 text-sm">£</span>
+                      <input type="number" min="0" step="0.01"
+                        className="w-28 text-right px-3 py-2 bg-slate-100 rounded-lg tabular-nums text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        style={{ fontFamily: "'JetBrains Mono', monospace" }} value={quote.deliveryPrice}
+                        onChange={e => update({ deliveryPrice: parseFloat(e.target.value) || 0 })} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className="bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden">
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3">
+                <h3 className="text-lg font-serif" style={{ fontFamily: "'Fraunces', serif" }}>Consumables Estimate</h3>
+                <span className="text-[9px] uppercase tracking-widest font-bold bg-slate-900 text-blue-300 px-2 py-0.5 rounded">No discount</span>
+              </div>
+              <div className="p-5">
+                <p className="text-sm text-slate-500 mb-3">Lump-sum estimate for gels, tape, wrap, and anything not ticked above. Charged as used.</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-400 text-sm">£</span>
+                  <input type="number" min="0" step="1"
+                    className="w-36 text-right px-3 py-2 bg-slate-100 rounded-lg tabular-nums text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    style={{ fontFamily: "'JetBrains Mono', monospace" }} value={quote.consumablesEstimate}
+                    onChange={e => update({ consumablesEstimate: parseFloat(e.target.value) || 0 })} />
+                </div>
+              </div>
+            </section>
+
+            <section className="bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden">
+              <div className="px-5 py-4 border-b border-slate-100">
+                <h3 className="text-lg font-serif" style={{ fontFamily: "'Fraunces', serif" }}>Notes</h3>
+              </div>
+              <div className="p-5">
+                <textarea className="w-full text-sm bg-slate-50 rounded-lg px-3 py-2 min-h-24 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  placeholder="Any notes for the client — cross hires, extras on request, etc."
+                  value={quote.notes} onChange={e => update({ notes: e.target.value })} />
+              </div>
+            </section>
+          </main>
+
+          <div className="fixed bottom-0 inset-x-0 bg-slate-900 text-slate-50 shadow-2xl z-30 safe-bottom">
+            <div className="max-w-6xl mx-auto px-4 py-4">
+              <div className="grid grid-cols-12 gap-4 items-end">
+                <div className="col-span-12 md:col-span-7">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-semibold">Discount</span>
+                    <div className="flex bg-slate-800 rounded-md overflow-hidden text-[11px]">
+                      <button onClick={() => setDiscountEditMode("percent")}
+                        className={`px-2 py-0.5 ${discountEditMode === "percent" ? "bg-blue-500 text-white font-semibold" : "text-slate-400"}`}>By %</button>
+                      <button onClick={() => { setDiscountEditMode("target"); setTargetTotalInput(totals.grandTotal.toFixed(2)); }}
+                        className={`px-2 py-0.5 ${discountEditMode === "target" ? "bg-blue-500 text-white font-semibold" : "text-slate-400"}`}>By total</button>
+                    </div>
+                  </div>
+                  {discountEditMode === "percent" ? (
+                    <div className="flex items-center gap-3">
+                      <input type="range" min="0" max="100" step="0.5" value={quote.discountPct}
+                        onChange={e => update({ discountPct: parseFloat(e.target.value) })}
+                        className="flex-1 accent-blue-500" />
+                      <div className="flex items-center gap-1 bg-slate-800 rounded-lg px-2">
+                        <input type="number" min="0" max="100" step="0.5" value={quote.discountPct}
+                          onChange={e => update({ discountPct: Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) })}
+                          className="w-14 py-2 bg-transparent text-right tabular-nums focus:outline-none"
+                          style={{ fontFamily: "'JetBrains Mono', monospace" }} />
+                        <span className="text-slate-400">%</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-400">£</span>
+                      <input type="number" min="0" step="0.01" value={targetTotalInput}
+                        onChange={e => setTargetTotalInput(e.target.value)} placeholder="Target total"
+                        className="flex-1 py-2 px-3 bg-slate-800 rounded-lg tabular-nums focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        style={{ fontFamily: "'JetBrains Mono', monospace" }} />
+                      <button onClick={applyTargetTotal}
+                        className="py-2 px-4 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-400">Apply</button>
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-400 mt-2 tabular-nums" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                    <span>Kit: {money(totals.discountable)}</span>
+                    <span>− Discount: {money(totals.discountable - totals.kitAfterDiscount)}</span>
+                    <span>+ Services: {money(totals.services)}</span>
+                    {(totals.consumablesPicked + totals.consumablesEst) > 0 && (<span>+ Consumables: {money(totals.consumablesPicked + totals.consumablesEst)}</span>)}
+                  </div>
+                </div>
+                <div className="col-span-12 md:col-span-5 flex items-center justify-between md:justify-end gap-3">
+                  <div className="text-right">
+                    <div className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-semibold">Total</div>
+                    <div className="text-3xl font-serif text-blue-300 tabular-nums leading-tight" style={{ fontFamily: "'Fraunces', serif" }}>
+                      {money(totals.grandTotal)}
+                    </div>
+                  </div>
+                  <button onClick={() => setMode("preview")}
+                    className="h-12 px-5 rounded-lg bg-blue-500 text-white font-semibold flex items-center gap-2 hover:bg-blue-400 transition">
+                    <EyeIcon size={16} /> Preview
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {showSaveDialog && (
+            <Modal onClose={() => setShowSaveDialog(false)} title="Save this quote">
+              <p className="text-sm text-slate-500 mb-3">Saves to this device only. You can load it again anytime.</p>
+              <input autoFocus value={saveName} onChange={e => setSaveName(e.target.value)} placeholder="Quote name"
+                className="w-full px-3 py-3 bg-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                onKeyDown={e => e.key === "Enter" && saveQuote()} />
+              <div className="flex justify-end gap-2 mt-4">
+                <button onClick={() => setShowSaveDialog(false)} className="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100">Cancel</button>
+                <button onClick={saveQuote} className="px-4 py-2 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800">Save</button>
+              </div>
+            </Modal>
+          )}
+
+          {showLoadDialog && (
+            <Modal onClose={() => setShowLoadDialog(false)} title="Saved quotes">
+              {savedList.length === 0 ? (
+                <p className="text-sm text-slate-500">No saved quotes yet.</p>
+              ) : (
+                <div className="divide-y divide-slate-100 max-h-96 overflow-auto -mx-2">
+                  {savedList.map(s => (
+                    <div key={s.id} className="flex items-center justify-between gap-3 px-2 py-3">
+                      <button onClick={() => loadSaved(s.id)} className="text-left flex-1 min-w-0">
+                        <div className="font-semibold truncate">{s.name}</div>
+                        <div className="text-xs text-slate-500 tabular-nums">
+                          {new Date(s.date).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}{" · "}{money(s.total)}
+                        </div>
+                      </button>
+                      <button onClick={() => deleteSaved(s.id)}
+                        className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50">
+                        <TrashIcon size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Modal>
+          )}
+
+          {toast && (
+            <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-slate-900 text-blue-300 px-4 py-2 rounded-full text-sm font-medium shadow-xl z-50">
+              {toast}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<QuoteGenerator />);
+  </script>
+</body>
+</html>
