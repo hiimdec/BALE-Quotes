@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -8,41 +7,20 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Big Al's" />
-  <title>Big Al's Lighting Emporium — Quote Builder</title>
+  <meta name="apple-mobile-web-app-title" content="Quotes" />
+  <title>Lighting Quote Builder</title>
 
-  <!-- PWA manifest, inlined as a data URI so the whole thing works from a single file -->
-
-  <link rel="manifest" href='data:application/manifest+json,{"name":"Big%20Al%27s%20Lighting%20Emporium","short_name":"Big%20Al%27s","start_url":".","display":"standalone","background_color":"%23f8fafc","theme_color":"%230f172a","icons":[{"src":"data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%3E%3Crect%20width%3D%22512%22%20height%3D%22512%22%20rx%3D%22112%22%20fill%3D%22%230f172a%22%2F%3E%3Ccircle%20cx%3D%22256%22%20cy%3D%22210%22%20r%3D%2296%22%20fill%3D%22%233b82f6%22%2F%3E%3Cpath%20d%3D%22M200%20330%20h112%20v24%20h-112z%20M212%20366%20h88%20v18%20h-88z%20M228%20396%20h56%20v18%20h-56z%22%20fill%3D%22%233b82f6%22%2F%3E%3Ccircle%20cx%3D%22256%22%20cy%3D%22210%22%20r%3D%2256%22%20fill%3D%22%23f8fafc%22%2F%3E%3C%2Fsvg%3E","sizes":"512x512","type":"image/svg+xml","purpose":"any"}]}' />
-
-  <!-- Apple touch icon (SVG works on modern iOS) -->
-
+  <link rel="manifest" href='data:application/manifest+json,{"name":"Lighting%20Quote%20Builder","short_name":"Quotes","start_url":".","display":"standalone","background_color":"%23f8fafc","theme_color":"%230f172a","icons":[{"src":"data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20512%20512%22%3E%3Crect%20width%3D%22512%22%20height%3D%22512%22%20rx%3D%22112%22%20fill%3D%22%230f172a%22%2F%3E%3Ccircle%20cx%3D%22256%22%20cy%3D%22210%22%20r%3D%2296%22%20fill%3D%22%233b82f6%22%2F%3E%3Cpath%20d%3D%22M200%20330%20h112%20v24%20h-112z%20M212%20366%20h88%20v18%20h-88z%20M228%20396%20h56%20v18%20h-56z%22%20fill%3D%22%233b82f6%22%2F%3E%3Ccircle%20cx%3D%22256%22%20cy%3D%22210%22%20r%3D%2256%22%20fill%3D%22%23f8fafc%22%2F%3E%3C%2Fsvg%3E","sizes":"512x512","type":"image/svg+xml","purpose":"any"}]}' />
   <link rel="apple-touch-icon" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="%230f172a"/><circle cx="256" cy="210" r="96" fill="%233b82f6"/><path d="M200 330 h112 v24 h-112z M212 366 h88 v18 h-88z M228 396 h56 v18 h-56z" fill="%233b82f6"/><circle cx="256" cy="210" r="56" fill="%23f8fafc"/></svg>' />
-
-  <!-- Favicon -->
-
   <link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="%230f172a"/><circle cx="256" cy="210" r="96" fill="%233b82f6"/><circle cx="256" cy="210" r="56" fill="%23f8fafc"/></svg>' />
-
-  <!-- Fonts -->
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,450;9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" />
-
-  <!-- Tailwind (CDN build) -->
-
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- React + ReactDOM + Babel for in-browser JSX -->
-
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <!-- jsPDF (pre-loaded so PDF button works instantly, even offline) -->
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
@@ -54,21 +32,21 @@
       -webkit-tap-highlight-color: transparent;
       -webkit-text-size-adjust: 100%;
     }
-    /* Stop iOS from zooming when tapping inputs */
     input, textarea, select { font-size: 16px; }
-    /* Respect the iPhone/iPad safe area */
     .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
     .safe-top { padding-top: env(safe-area-inset-top); }
+    /* Hide scrollbar on the section nav strip */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
-
 </head>
 <body>
   <div id="root"></div>
 
   <script type="text/babel" data-presets="react">
-    const { useState, useEffect, useMemo, useRef } = React;
+    const { useState, useEffect, useMemo, useRef, useCallback } = React;
 
-    /* Tiny inline icon set — avoids pulling in lucide-react */
+    /* ───────── Icons ───────── */
     const Icon = ({ d, size = 20, stroke = 2, fill = "none", className = "" }) => (
       <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
         fill={fill} stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round"
@@ -80,6 +58,7 @@
     const ChevRightIcon = (p) => <Icon {...p} d={<polyline points="9 18 15 12 9 6"/>} />;
     const TrashIcon = (p) => <Icon {...p} d={<><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></>} />;
     const DownloadIcon = (p) => <Icon {...p} d={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>} />;
+    const ShareIcon = (p) => <Icon {...p} d={<><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></>} />;
     const EyeIcon = (p) => <Icon {...p} d={<><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>} />;
     const EditIcon = (p) => <Icon {...p} d={<><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></>} />;
     const BulbIcon = (p) => <Icon {...p} d={<><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c1 .8 1.5 2 1.5 3.3h5c0-1.3.5-2.5 1.5-3.3A7 7 0 0 0 12 2z"/></>} />;
@@ -90,9 +69,18 @@
     const CalendarIcon = (p) => <Icon {...p} d={<><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></>} />;
     const CheckIcon = (p) => <Icon {...p} d={<polyline points="20 6 9 17 4 12"/>} />;
     const LoaderIcon = (p) => <Icon {...p} className={"animate-spin " + (p.className || "")} d={<><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></>} />;
+    const SettingsIcon = (p) => <Icon {...p} d={<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></>} />;
+    const SearchIcon = (p) => <Icon {...p} d={<><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>} />;
+    const CopyIcon = (p) => <Icon {...p} d={<><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></>} />;
+    const ClockIcon = (p) => <Icon {...p} d={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>} />;
+    const ListIcon = (p) => <Icon {...p} d={<><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></>} />;
+    const AlertIcon = (p) => <Icon {...p} d={<><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></>} />;
 
-    /* ───────────────────────── Catalog ───────────────────────── */
-    const CATALOG = {
+    /* ───────────────────────── Default catalog ─────────────────────────
+       This is the baseline. Users can override prices, add new items, or
+       remove items via the catalog editor. The "live" CATALOG (what the
+       app actually uses) is built by applying user overrides on top. */
+    const CATALOG_DEFAULT = {
       lights: { label: "Lights", items: [
         { name: "NANLUX 2400B", price: 300 },
         { name: "NANLUX EVOKE 1200B", price: 200 },
@@ -209,8 +197,7 @@
       ]},
     };
 
-    /* ───────────────── Storage adapter ───────────────── */
-    /* Uses localStorage when hosted on GitHub Pages — persistent across sessions. */
+    /* ─────────── Storage & helpers ─────────── */
     const storage = {
       async get(key) {
         try { const v = localStorage.getItem(key); return v ? { value: v } : null; }
@@ -220,10 +207,15 @@
       async delete(key) { try { localStorage.removeItem(key); } catch (e) {} },
     };
 
-    const STORAGE_KEY = "bigal:currentDraft";
-    const SAVED_INDEX_KEY = "bigal:savedIndex";
-    const SAVED_PREFIX = "bigal:saved:";
-    const QUOTE_VERSION = 2;
+    const STORAGE_KEY = "alq:currentDraft";
+    const SAVED_INDEX_KEY = "alq:savedIndex";
+    const SAVED_PREFIX = "alq:saved:";
+    const BRAND_KEY = "alq:brandName";
+    const CATALOG_OVERRIDES_KEY = "alq:catalogOverrides";
+    const RECENT_KEY = "alq:recentIds";
+    const QUOTE_VERSION = 3;
+    const DEFAULT_BRAND = "Al Rice Lights";
+    const RECENT_MAX = 5;
 
     const money = (n) => {
       if (isNaN(n) || n === null) n = 0;
@@ -244,29 +236,70 @@
       catch { return d; }
     };
 
-    function buildItems(defaultsOn) {
+    /* ─────────── Catalog merging ───────────
+       Overrides shape: {
+         priceEdits: { "section:itemname": price },
+         additions: [{section, name, price, default?}],
+         removals: ["section:itemname", ...]
+       }
+    */
+    function applyOverrides(base, overrides) {
+      if (!overrides) return base;
+      const live = {};
+      for (const [secKey, sec] of Object.entries(base)) {
+        const removed = new Set(overrides.removals || []);
+        const items = sec.items
+          .filter(it => !removed.has(`${secKey}:${it.name}`))
+          .map(it => {
+            const k = `${secKey}:${it.name}`;
+            if (overrides.priceEdits && overrides.priceEdits[k] !== undefined) {
+              return { ...it, price: overrides.priceEdits[k] };
+            }
+            return it;
+          });
+        live[secKey] = { ...sec, items };
+      }
+      // Apply additions
+      (overrides.additions || []).forEach(add => {
+        if (!live[add.section]) return;
+        live[add.section].items.push({ name: add.name, price: add.price, default: add.default });
+      });
+      // Re-sort by price desc within each section
+      Object.values(live).forEach(sec => {
+        sec.items.sort((a, b) => Number(b.price) - Number(a.price));
+      });
+      return live;
+    }
+
+    /* ─────────── Quote model ─────────── */
+    function buildItems(catalog, defaultsOn) {
       const items = {};
-      Object.entries(CATALOG).forEach(([secKey, sec]) => {
+      Object.entries(catalog).forEach(([secKey, sec]) => {
         sec.items.forEach(item => {
           const id = itemId(secKey, item.name);
-          items[id] = { section: secKey, name: item.name, price: item.price, days: 1, qty: defaultsOn ? (item.default || 0) : 0, custom: false };
+          items[id] = {
+            section: secKey, name: item.name, price: item.price,
+            days: 1, qty: defaultsOn ? (item.default || 0) : 0, custom: false,
+          };
         });
       });
       return items;
     }
 
-    const emptyQuote = (defaultsOn = true) => ({
+    const emptyQuote = (catalog, defaultsOn = true) => ({
       version: QUOTE_VERSION, jobName: "", jobDate: todayStr(),
       dateStart: "", dateEnd: "",
       productionCompany: "", producer: "",
-      items: buildItems(defaultsOn),
-      discountPct: 30, deliveryPrice: 0, deliveryNote: "Delivery & Collect (London)",
+      items: buildItems(catalog, defaultsOn),
+      discountPct: 30,
+      targetTotalOverride: null,
+      deliveryPrice: 0, deliveryNote: "Delivery & Collect (London)",
       gafferDays: 1, gafferRate: 568, vanDays: 1, vanRate: 110,
       consumablesEstimate: 0, notes: "", defaultsOn,
     });
 
-    function mergeSaved(saved) {
-      const fresh = emptyQuote(saved?.defaultsOn ?? true);
+    function mergeSaved(catalog, saved) {
+      const fresh = emptyQuote(catalog, saved?.defaultsOn ?? true);
       if (!saved) return fresh;
       const freshItems = { ...fresh.items };
       if (saved.items) {
@@ -278,14 +311,19 @@
             return;
           }
           const id = itemId(oldIt.section, oldIt.name);
-          if (freshItems[id]) freshItems[id] = { ...freshItems[id], qty: oldIt.qty, days: oldIt.days, price: oldIt.price ?? freshItems[id].price };
+          if (freshItems[id]) {
+            freshItems[id] = { ...freshItems[id], qty: oldIt.qty, days: oldIt.days, price: oldIt.price ?? freshItems[id].price };
+          } else {
+            // Item was removed from catalog but is in this saved quote; keep it
+            freshItems[id] = { ...oldIt };
+          }
         });
       }
       return { ...fresh, ...saved, items: freshItems, version: QUOTE_VERSION };
     }
 
-    /* ──────────────────── PDF generation ──────────────────── */
-    async function generatePDF(quote, totals) {
+    /* ─────────── PDF generation ─────────── */
+    async function generatePDF(quote, totals, brandName, catalog, returnBlob = false) {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
       const pageW = 210, pageH = 297;
@@ -320,7 +358,7 @@
       doc.setFillColor(BLUE[0], BLUE[1], BLUE[2]);
       doc.circle(mL + 4, y + 4, 4, "F");
       setText(8, "bold", BLUE_DARK);
-      doc.text("BIG AL'S LIGHTING EMPORIUM", mL + 11, y + 5.5);
+      doc.text((brandName || DEFAULT_BRAND).toUpperCase(), mL + 11, y + 5.5);
       y += 12;
 
       setText(22, "normal", DARK);
@@ -399,7 +437,7 @@
         y += rowH + 0.5;
       };
 
-      Object.entries(CATALOG).forEach(([secKey, sec]) => {
+      Object.entries(catalog).forEach(([secKey, sec]) => {
         const picked = Object.values(quote.items).filter(it => it.section === secKey && Number(it.qty) > 0);
         if (picked.length === 0) return;
         drawSectionHeader(sec.label, !!sec.excludeFromDiscount);
@@ -433,8 +471,8 @@
         y += 5;
       };
       totalRow("Kit subtotal", totals.discountable);
-      if (totals.discountPct > 0) {
-        totalRow(`Discount (${totals.discountPct}%)`, -(totals.discountable - totals.kitAfterDiscount), { muted: true });
+      if (totals.displayDiscountPct > 0) {
+        totalRow(`Discount (${totals.displayDiscountPct}%)`, -totals.discountAmount, { muted: true });
         totalRow("Kit after discount", totals.kitAfterDiscount, { bold: true });
       }
       if (totals.services > 0) totalRow("Services & transport", totals.services);
@@ -448,9 +486,9 @@
       doc.line(tLabelX - 5, y, tValueX, y);
       y += 6;
       setText(8, "bold", DARK);
-      doc.text("TOTAL", tLabelX, y + 3);
+      doc.text("TOTAL", tLabelX, y + 4);
       setText(20, "bold", BLUE_DARK);
-      doc.text(money(totals.grandTotal), tValueX, y + 4, { align: "right" });
+      doc.text(money(totals.grandTotal), tValueX, y + 5, { align: "right" });
       y += 14;
 
       if (quote.notes && quote.notes.trim()) {
@@ -471,15 +509,44 @@
         doc.setPage(i);
         setText(7, "normal", MUTED);
         doc.text("Cross hires available on request · Consumables charged as used", mL, pageH - 8);
-        doc.text("Big Al's Lighting Emporium", pageW - mR, pageH - 8, { align: "right" });
+        doc.text(brandName || DEFAULT_BRAND, pageW - mR, pageH - 8, { align: "right" });
         doc.text(`Page ${i} of ${pageCount}`, pageW / 2, pageH - 8, { align: "center" });
       }
 
       const safeName = slug(quote.jobName || "quote");
-      doc.save(`bigal-${safeName}-${todayStr()}.pdf`);
+      const safeBrand = slug(brandName || "quote");
+      const fileName = `${safeBrand}-${safeName}-${todayStr()}.pdf`;
+
+      if (returnBlob) {
+        const blob = doc.output("blob");
+        return { blob, fileName };
+      }
+      doc.save(fileName);
+      return { fileName };
     }
 
-    /* ──────────────────── Components ──────────────────── */
+    /* ─────────── Share helper (uses Web Share API where available) ─────────── */
+    async function sharePDF(quote, totals, brandName, catalog) {
+      const { blob, fileName } = await generatePDF(quote, totals, brandName, catalog, true);
+      const file = new File([blob], fileName, { type: "application/pdf" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: quote.jobName || "Quote",
+          text: `${brandName || DEFAULT_BRAND} — ${quote.jobName || "Quote"}`,
+        });
+        return "shared";
+      }
+      // Fallback: trigger a download
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = fileName;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      return "downloaded";
+    }
+
+    /* ─────────── Components ─────────── */
     function Field({ label, value, onChange, type = "text", placeholder }) {
       return (
         <label className="block">
@@ -490,24 +557,52 @@
       );
     }
 
-    function Modal({ children, onClose, title }) {
+    function Modal({ children, onClose, title, wide = false }) {
       return (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <div className={`bg-white rounded-2xl ${wide ? "max-w-2xl" : "max-w-md"} w-full shadow-2xl max-h-[90vh] flex flex-col`} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
               <h3 className="font-serif text-lg" style={{ fontFamily: "'Fraunces', serif" }}>{title}</h3>
               <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100"><XIcon size={20} /></button>
             </div>
-            <div className="p-5">{children}</div>
+            <div className="p-5 overflow-y-auto">{children}</div>
           </div>
         </div>
       );
     }
 
-    function ItemRow({ id, item, onChange, onDelete }) {
-      const line = Number(item.price) * Number(item.days) * Number(item.qty);
+    function ConfirmDialog({ title, body, confirmLabel = "Confirm", danger = false, onConfirm, onCancel }) {
       return (
-        <div className="px-4 py-3 grid grid-cols-12 gap-2 items-center hover:bg-slate-50/50 transition">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onCancel}>
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="p-5">
+              <div className="flex gap-3 items-start">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${danger ? "bg-red-100 text-red-600" : "bg-blue-100 text-blue-600"}`}>
+                  <AlertIcon size={20} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-base mb-1">{title}</h3>
+                  <div className="text-sm text-slate-600">{body}</div>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 px-5 pb-5">
+              <button onClick={onCancel} className="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 font-medium">Cancel</button>
+              <button onClick={onConfirm}
+                className={`px-4 py-2 rounded-lg text-white font-semibold ${danger ? "bg-red-600 hover:bg-red-500" : "bg-slate-900 hover:bg-slate-800"}`}>
+                {confirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function ItemRow({ id, item, onChange, onDelete, highlight }) {
+      const line = Number(item.price) * Number(item.days) * Number(item.qty);
+      const cls = highlight ? "bg-blue-50/60" : "";
+      return (
+        <div className={`px-4 py-3 grid grid-cols-12 gap-2 items-center hover:bg-slate-50/50 transition ${cls}`}>
           <div className="col-span-12 sm:col-span-5 min-w-0">
             {item.custom ? (
               <input value={item.name} onChange={e => onChange({ name: e.target.value })}
@@ -594,15 +689,215 @@
       );
     }
 
-    function PreviewView({ quote, totals, onBack, onDownload, downloading }) {
+    /* ─────────── Catalog editor ─────────── */
+    function CatalogEditor({ overrides, onSave, onClose }) {
+      const [draft, setDraft] = useState(() => JSON.parse(JSON.stringify(overrides || { priceEdits: {}, additions: [], removals: [] })));
+      const [confirmReset, setConfirmReset] = useState(false);
+      const [adding, setAdding] = useState(null); // section key
+      const [newName, setNewName] = useState("");
+      const [newPrice, setNewPrice] = useState("");
+
+      const live = useMemo(() => applyOverrides(CATALOG_DEFAULT, draft), [draft]);
+
+      const isRemoved = (secKey, name) => (draft.removals || []).includes(`${secKey}:${name}`);
+      const isCustom = (secKey, name) => (draft.additions || []).some(a => a.section === secKey && a.name === name);
+
+      const setPrice = (secKey, name, price) => {
+        const k = `${secKey}:${name}`;
+        if (isCustom(secKey, name)) {
+          // Update the addition itself, not the priceEdits map
+          setDraft(d => ({ ...d, additions: d.additions.map(a => a.section === secKey && a.name === name ? { ...a, price } : a) }));
+        } else {
+          setDraft(d => ({ ...d, priceEdits: { ...d.priceEdits, [k]: price } }));
+        }
+      };
+
+      const removeItem = (secKey, name) => {
+        if (isCustom(secKey, name)) {
+          // Just drop the addition
+          setDraft(d => ({ ...d, additions: d.additions.filter(a => !(a.section === secKey && a.name === name)) }));
+        } else {
+          const k = `${secKey}:${name}`;
+          setDraft(d => ({ ...d, removals: [...(d.removals || []), k] }));
+        }
+      };
+
+      const restoreItem = (secKey, name) => {
+        const k = `${secKey}:${name}`;
+        setDraft(d => ({ ...d, removals: (d.removals || []).filter(x => x !== k) }));
+      };
+
+      const resetPrice = (secKey, name) => {
+        const k = `${secKey}:${name}`;
+        setDraft(d => {
+          const next = { ...d.priceEdits };
+          delete next[k];
+          return { ...d, priceEdits: next };
+        });
+      };
+
+      const addItem = () => {
+        const name = newName.trim();
+        const price = parseFloat(newPrice);
+        if (!name || isNaN(price) || price < 0 || !adding) return;
+        // Check duplicates
+        const exists = live[adding].items.some(it => it.name.toLowerCase() === name.toLowerCase());
+        if (exists) { alert("An item with that name already exists in this section."); return; }
+        setDraft(d => ({ ...d, additions: [...(d.additions || []), { section: adding, name, price }] }));
+        setNewName(""); setNewPrice(""); setAdding(null);
+      };
+
+      const resetAll = () => {
+        setDraft({ priceEdits: {}, additions: [], removals: [] });
+        setConfirmReset(false);
+      };
+
+      const editCount = Object.keys(draft.priceEdits || {}).length;
+      const addCount = (draft.additions || []).length;
+      const removeCount = (draft.removals || []).length;
+      const totalChanges = editCount + addCount + removeCount;
+
+      return (
+        <Modal title="Catalog editor" onClose={onClose} wide>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <div className="text-slate-500">
+                {totalChanges === 0 ? "No changes from defaults." : (
+                  <>
+                    {editCount > 0 && <span>{editCount} price{editCount !== 1 ? "s" : ""} edited · </span>}
+                    {addCount > 0 && <span>{addCount} added · </span>}
+                    {removeCount > 0 && <span>{removeCount} removed</span>}
+                  </>
+                )}
+              </div>
+              {totalChanges > 0 && (
+                <button onClick={() => setConfirmReset(true)} className="text-xs text-slate-500 hover:text-red-600 underline underline-offset-2">
+                  Reset to defaults
+                </button>
+              )}
+            </div>
+
+            {Object.entries(CATALOG_DEFAULT).map(([secKey, sec]) => {
+              const liveSec = live[secKey];
+              const removedHere = (draft.removals || []).filter(k => k.startsWith(`${secKey}:`));
+              return (
+                <details key={secKey} className="bg-slate-50 rounded-lg overflow-hidden border border-slate-200/70" open={false}>
+                  <summary className="px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-100/50 transition list-none">
+                    <span className="font-semibold">{sec.label}</span>
+                    <span className="text-xs text-slate-500 tabular-nums">{liveSec.items.length} item{liveSec.items.length !== 1 ? "s" : ""}</span>
+                  </summary>
+                  <div className="bg-white border-t border-slate-200/70">
+                    {liveSec.items.map(it => {
+                      const k = `${secKey}:${it.name}`;
+                      const original = CATALOG_DEFAULT[secKey].items.find(x => x.name === it.name);
+                      const edited = original && draft.priceEdits && draft.priceEdits[k] !== undefined && original.price !== draft.priceEdits[k];
+                      const custom = isCustom(secKey, it.name);
+                      return (
+                        <div key={it.name} className="px-4 py-2.5 flex items-center gap-3 text-sm border-b border-slate-100 last:border-b-0">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium truncate">{it.name}</div>
+                            <div className="text-[10px] text-slate-400 mt-0.5">
+                              {custom ? "Added" : edited ? `Default £${original.price.toFixed(2)}` : "Default"}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-slate-400 text-xs">£</span>
+                            <input type="number" min="0" step="0.01" value={it.price}
+                              onChange={e => setPrice(secKey, it.name, parseFloat(e.target.value) || 0)}
+                              className="w-20 px-2 py-1.5 bg-slate-50 rounded text-right tabular-nums text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                              style={{ fontFamily: "'JetBrains Mono', monospace" }} />
+                          </div>
+                          {edited && !custom && (
+                            <button onClick={() => resetPrice(secKey, it.name)}
+                              className="text-[11px] text-slate-400 hover:text-blue-600 px-1">reset</button>
+                          )}
+                          <button onClick={() => removeItem(secKey, it.name)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded">
+                            <TrashIcon size={14} />
+                          </button>
+                        </div>
+                      );
+                    })}
+
+                    {/* Show removed items so they can be restored */}
+                    {removedHere.map(k => {
+                      const name = k.split(":").slice(1).join(":");
+                      const original = CATALOG_DEFAULT[secKey].items.find(x => x.name === name);
+                      if (!original) return null;
+                      return (
+                        <div key={k} className="px-4 py-2 flex items-center gap-3 text-sm border-b border-slate-100 last:border-b-0 bg-red-50/40">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium line-through text-slate-400 truncate">{name}</div>
+                            <div className="text-[10px] text-red-600 mt-0.5">Removed</div>
+                          </div>
+                          <button onClick={() => restoreItem(secKey, name)}
+                            className="text-xs text-blue-600 hover:text-blue-700 font-medium px-2">Restore</button>
+                        </div>
+                      );
+                    })}
+
+                    {/* Add new */}
+                    {adding === secKey ? (
+                      <div className="px-4 py-3 flex items-center gap-2 bg-blue-50/40 border-t border-slate-100">
+                        <input autoFocus value={newName} onChange={e => setNewName(e.target.value)} placeholder="Item name"
+                          className="flex-1 px-2 py-1.5 bg-white rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                        <span className="text-slate-400 text-xs">£</span>
+                        <input type="number" min="0" step="0.01" value={newPrice} onChange={e => setNewPrice(e.target.value)} placeholder="0"
+                          onKeyDown={e => e.key === "Enter" && addItem()}
+                          className="w-20 px-2 py-1.5 bg-white rounded text-right tabular-nums text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                          style={{ fontFamily: "'JetBrains Mono', monospace" }} />
+                        <button onClick={addItem}
+                          className="px-3 py-1.5 bg-blue-500 text-white rounded text-xs font-semibold hover:bg-blue-400">Add</button>
+                        <button onClick={() => { setAdding(null); setNewName(""); setNewPrice(""); }}
+                          className="text-xs text-slate-500 hover:text-slate-900 px-1">Cancel</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setAdding(secKey)}
+                        className="w-full px-4 py-2.5 text-left text-sm text-blue-700 hover:bg-blue-50/40 flex items-center gap-1 border-t border-slate-100">
+                        <PlusIcon size={14} /> Add item to {sec.label}
+                      </button>
+                    )}
+                  </div>
+                </details>
+              );
+            })}
+
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Catalog edits apply to <em>new</em> items added to a quote. Items already added to an existing quote keep their per-quote price unless you re-add them.
+              Saved on this device.
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-5 pt-4 border-t border-slate-100 sticky bottom-0 bg-white">
+            <button onClick={onClose} className="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 font-medium">Cancel</button>
+            <button onClick={() => onSave(draft)}
+              className="px-4 py-2 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800">Save changes</button>
+          </div>
+
+          {confirmReset && (
+            <ConfirmDialog
+              title="Reset catalog to defaults?"
+              body="All your price edits, added items, and removals will be reverted. Quotes already saved are unaffected."
+              confirmLabel="Reset"
+              danger
+              onConfirm={resetAll}
+              onCancel={() => setConfirmReset(false)}
+            />
+          )}
+        </Modal>
+      );
+    }
+
+    /* ─────────── Preview view ─────────── */
+    function PreviewView({ quote, totals, brandName, catalog, onBack, onDownload, onShare, downloading }) {
       const groupedSections = useMemo(() => {
         const out = [];
-        Object.entries(CATALOG).forEach(([secKey, sec]) => {
+        Object.entries(catalog).forEach(([secKey, sec]) => {
           const picked = Object.entries(quote.items).filter(([_, it]) => it.section === secKey && Number(it.qty) > 0);
           if (picked.length > 0) out.push({ secKey, sec, picked });
         });
         return out;
-      }, [quote.items]);
+      }, [quote.items, catalog]);
 
       const shootRange = useMemo(() => {
         if (quote.dateStart && quote.dateEnd) {
@@ -613,18 +908,28 @@
         return null;
       }, [quote.dateStart, quote.dateEnd]);
 
+      const canShare = typeof navigator !== "undefined" && !!navigator.canShare;
+
       return (
         <div className="min-h-screen bg-slate-100 text-slate-900">
           <div className="sticky top-0 z-30 bg-slate-900 text-slate-50 safe-top">
-            <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+            <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2 flex-wrap">
               <button onClick={onBack} className="h-10 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-medium flex items-center gap-2">
                 <EditIcon size={16} /> Back to edit
               </button>
-              <button onClick={onDownload} disabled={downloading}
-                className="h-10 px-4 rounded-lg bg-blue-500 text-white hover:bg-blue-400 disabled:opacity-70 text-sm font-semibold flex items-center gap-2">
-                {downloading ? <LoaderIcon size={16} /> : <DownloadIcon size={16} />}
-                {downloading ? "Building PDF…" : "Download PDF"}
-              </button>
+              <div className="flex items-center gap-2">
+                {canShare && (
+                  <button onClick={onShare} disabled={downloading}
+                    className="h-10 px-4 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-70 text-sm font-semibold flex items-center gap-2">
+                    <ShareIcon size={16} /> Share
+                  </button>
+                )}
+                <button onClick={onDownload} disabled={downloading}
+                  className="h-10 px-4 rounded-lg bg-blue-500 text-white hover:bg-blue-400 disabled:opacity-70 text-sm font-semibold flex items-center gap-2">
+                  {downloading ? <LoaderIcon size={16} /> : <DownloadIcon size={16} />}
+                  {downloading ? "Building…" : "Download PDF"}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -636,7 +941,7 @@
                     <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
                       <BulbIcon size={16} className="text-white" />
                     </div>
-                    <div className="text-xs uppercase tracking-[0.22em] font-bold text-blue-700">Big Al's Lighting Emporium</div>
+                    <div className="text-xs uppercase tracking-[0.22em] font-bold text-blue-700">{brandName || DEFAULT_BRAND}</div>
                   </div>
                   <h1 className="text-4xl font-serif leading-tight mb-1" style={{ fontFamily: "'Fraunces', serif", fontWeight: 450 }}>
                     {quote.jobName || "Quote"}
@@ -743,9 +1048,9 @@
               <div className="mt-8 pt-6 border-t-2 border-slate-900">
                 <div className="ml-auto max-w-sm space-y-2 text-sm">
                   <TotalRow label="Kit subtotal" value={totals.discountable} />
-                  {totals.discountPct > 0 && (
+                  {totals.displayDiscountPct > 0 && (
                     <>
-                      <TotalRow label={`Discount (${totals.discountPct}%)`} value={-(totals.discountable - totals.kitAfterDiscount)} muted />
+                      <TotalRow label={`Discount (${totals.displayDiscountPct}%)`} value={-totals.discountAmount} muted />
                       <TotalRow label="Kit after discount" value={totals.kitAfterDiscount} bold />
                     </>
                   )}
@@ -771,7 +1076,7 @@
 
               <div className="mt-10 pt-4 border-t border-slate-200 text-[11px] text-slate-500 flex justify-between">
                 <span>Cross hires available on request · Consumables charged as used</span>
-                <span>Big Al's Lighting Emporium</span>
+                <span>{brandName || DEFAULT_BRAND}</span>
               </div>
             </div>
           </div>
@@ -779,34 +1084,77 @@
       );
     }
 
+    /* ─────────── Main app ─────────── */
     function QuoteGenerator() {
-      const [quote, setQuote] = useState(() => emptyQuote(true));
+      // Catalog state
+      const [catalogOverrides, setCatalogOverrides] = useState({ priceEdits: {}, additions: [], removals: [] });
+      const liveCatalog = useMemo(() => applyOverrides(CATALOG_DEFAULT, catalogOverrides), [catalogOverrides]);
+
+      // Core quote state
+      const [quote, setQuote] = useState(() => emptyQuote(CATALOG_DEFAULT, true));
+      const [brandName, setBrandName] = useState(DEFAULT_BRAND);
       const [mode, setMode] = useState("edit");
       const [openSections, setOpenSections] = useState({ lights: true });
+
+      // Discount mode
       const [targetTotalInput, setTargetTotalInput] = useState("");
       const [discountEditMode, setDiscountEditMode] = useState("percent");
+
+      // Saved quotes & recents
       const [savedList, setSavedList] = useState([]);
+      const [recentIds, setRecentIds] = useState([]);
+      const [savedSearch, setSavedSearch] = useState("");
+      const [savedTab, setSavedTab] = useState("all"); // all | recent
+
+      // Search across catalog
+      const [itemSearch, setItemSearch] = useState("");
+
+      // Modals & dialogs
       const [showSaveDialog, setShowSaveDialog] = useState(false);
       const [showLoadDialog, setShowLoadDialog] = useState(false);
+      const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+      const [showCatalogEditor, setShowCatalogEditor] = useState(false);
+      const [confirm, setConfirm] = useState(null); // { title, body, confirmLabel, danger, onConfirm }
+
+      const [brandInput, setBrandInput] = useState("");
       const [saveName, setSaveName] = useState("");
       const [toast, setToast] = useState(null);
       const [globalDays, setGlobalDays] = useState(1);
       const [downloading, setDownloading] = useState(false);
+
+      // For sticky section nav highlighting
+      const sectionRefs = useRef({});
+      const [activeSection, setActiveSection] = useState(null);
+
       const saveDebounce = useRef(null);
 
+      /* Load everything on mount */
       useEffect(() => {
         (async () => {
           try {
+            const r = await storage.get(CATALOG_OVERRIDES_KEY);
+            if (r && r.value) setCatalogOverrides(JSON.parse(r.value));
+          } catch (e) {}
+          try {
             const r = await storage.get(STORAGE_KEY);
-            if (r && r.value) setQuote(mergeSaved(JSON.parse(r.value)));
+            if (r && r.value) setQuote(mergeSaved(CATALOG_DEFAULT, JSON.parse(r.value)));
           } catch (e) {}
           try {
             const r = await storage.get(SAVED_INDEX_KEY);
             if (r && r.value) setSavedList(JSON.parse(r.value));
           } catch (e) {}
+          try {
+            const r = await storage.get(RECENT_KEY);
+            if (r && r.value) setRecentIds(JSON.parse(r.value));
+          } catch (e) {}
+          try {
+            const r = await storage.get(BRAND_KEY);
+            if (r && r.value) setBrandName(r.value);
+          } catch (e) {}
         })();
       }, []);
 
+      /* Auto-save current draft */
       useEffect(() => {
         if (saveDebounce.current) clearTimeout(saveDebounce.current);
         saveDebounce.current = setTimeout(async () => {
@@ -815,10 +1163,28 @@
         return () => clearTimeout(saveDebounce.current);
       }, [quote]);
 
+      /* Auto-update globalDays from date range */
       useEffect(() => {
         const d = computeDaysFromRange(quote.dateStart, quote.dateEnd);
         if (d) setGlobalDays(d);
       }, [quote.dateStart, quote.dateEnd]);
+
+      /* When catalog changes, ensure quote items still align — items removed
+         from the catalog stay in the quote; new catalog items are added at qty 0. */
+      useEffect(() => {
+        setQuote(q => {
+          const next = { ...q.items };
+          Object.entries(liveCatalog).forEach(([secKey, sec]) => {
+            sec.items.forEach(it => {
+              const id = itemId(secKey, it.name);
+              if (!next[id]) {
+                next[id] = { section: secKey, name: it.name, price: it.price, days: 1, qty: 0, custom: false };
+              }
+            });
+          });
+          return { ...q, items: next };
+        });
+      }, [liveCatalog]);
 
       const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2200); };
       const update = (patch) => setQuote(q => ({ ...q, ...patch }));
@@ -839,51 +1205,113 @@
         showToast(`Applied ${d} day${d !== 1 ? "s" : ""} to all`);
       };
 
-      const toggleDefaults = () => {
+      /* Defaults toggle — confirm if it would wipe non-zero items */
+      const requestToggleDefaults = () => {
+        if (quote.defaultsOn) {
+          // turning OFF: warn if any items have qty > 0
+          const nonZero = Object.values(quote.items).filter(it => Number(it.qty) > 0).length;
+          if (nonZero > 0) {
+            setConfirm({
+              title: "Clear all items?",
+              body: `Turning defaults off will reset all ${nonZero} item${nonZero !== 1 ? "s" : ""} to 0. Custom items you've added will be preserved at their current quantity.`,
+              confirmLabel: "Clear",
+              danger: true,
+              onConfirm: () => { doToggleDefaults(); setConfirm(null); },
+            });
+            return;
+          }
+        }
+        doToggleDefaults();
+      };
+
+      const doToggleDefaults = () => {
         const turningOn = !quote.defaultsOn;
         setQuote(q => {
           const next = {};
           Object.entries(q.items).forEach(([id, it]) => {
-            if (it.custom) { next[id] = { ...it, qty: turningOn ? it.qty : 0 }; return; }
-            const catalogItem = CATALOG[it.section]?.items.find(c => c.name === it.name);
+            if (it.custom) { next[id] = { ...it, qty: turningOn ? it.qty : it.qty }; return; }
+            const catalogItem = liveCatalog[it.section]?.items.find(c => c.name === it.name);
             const defaultQty = catalogItem?.default || 0;
             next[id] = { ...it, qty: turningOn ? defaultQty : 0 };
           });
           return { ...q, items: next, defaultsOn: turningOn };
         });
-        showToast(turningOn ? "Defaults loaded" : "Cleared — all items set to 0");
+        showToast(turningOn ? "Defaults loaded" : "Catalog items cleared");
       };
 
+      /* Totals — same logic as before */
       const totals = useMemo(() => {
         let discountable = 0, consumablesPicked = 0;
+        const sectionSubtotals = {};
         Object.values(quote.items).forEach(it => {
           const line = Number(it.price) * Number(it.days) * Number(it.qty);
-          if (CATALOG[it.section]?.excludeFromDiscount) consumablesPicked += line;
+          sectionSubtotals[it.section] = (sectionSubtotals[it.section] || 0) + line;
+          if (liveCatalog[it.section]?.excludeFromDiscount) consumablesPicked += line;
           else discountable += line;
         });
-        const discountPct = Math.max(0, Math.min(100, Number(quote.discountPct) || 0));
-        const kitAfterDiscount = discountable * (1 - discountPct / 100);
         const gaffer = Number(quote.gafferRate) * Number(quote.gafferDays);
         const van = Number(quote.vanRate) * Number(quote.vanDays);
         const delivery = Number(quote.deliveryPrice) || 0;
         const consumablesEst = Number(quote.consumablesEstimate) || 0;
         const services = gaffer + van + delivery;
         const nonDiscountable = consumablesPicked + consumablesEst + services;
-        return { discountable, discountPct, kitAfterDiscount, consumablesPicked, consumablesEst,
-          gaffer, van, delivery, services, nonDiscountable, grandTotal: kitAfterDiscount + nonDiscountable };
-      }, [quote]);
+
+        let kitAfterDiscount, grandTotal, discountAmount, displayDiscountPct;
+        if (quote.targetTotalOverride !== null && quote.targetTotalOverride !== undefined) {
+          const target = Number(quote.targetTotalOverride);
+          grandTotal = target;
+          kitAfterDiscount = Math.max(0, target - nonDiscountable);
+          discountAmount = Math.max(0, discountable - kitAfterDiscount);
+          displayDiscountPct = discountable > 0 ? Math.round((discountAmount / discountable) * 100) : 0;
+        } else {
+          const pct = Math.max(0, Math.min(100, Number(quote.discountPct) || 0));
+          kitAfterDiscount = discountable * (1 - pct / 100);
+          discountAmount = discountable - kitAfterDiscount;
+          grandTotal = kitAfterDiscount + nonDiscountable;
+          displayDiscountPct = Math.round(pct);
+        }
+
+        return {
+          discountable, kitAfterDiscount, discountAmount, displayDiscountPct,
+          consumablesPicked, consumablesEst,
+          gaffer, van, delivery, services, nonDiscountable, grandTotal,
+          sectionSubtotals,
+        };
+      }, [quote, liveCatalog]);
 
       const applyTargetTotal = () => {
         const target = parseFloat(targetTotalInput);
-        if (isNaN(target) || totals.discountable <= 0) return;
-        const kitNeeded = target - totals.nonDiscountable;
-        if (kitNeeded <= 0) update({ discountPct: 100 });
-        else {
-          const pct = Math.max(0, Math.min(100, (1 - kitNeeded / totals.discountable) * 100));
-          update({ discountPct: +pct.toFixed(2) });
+        if (isNaN(target) || target < 0) return;
+        update({ targetTotalOverride: target });
+        showToast(`Total locked at ${money(target)}`);
+      };
+
+      const clearTargetOverride = () => {
+        if (quote.targetTotalOverride === null || quote.targetTotalOverride === undefined) return;
+        update({ targetTotalOverride: null, discountPct: totals.displayDiscountPct });
+        showToast("Total override cleared");
+      };
+
+      const switchToPercentMode = () => {
+        setDiscountEditMode("percent");
+        if (quote.targetTotalOverride !== null && quote.targetTotalOverride !== undefined) {
+          update({ targetTotalOverride: null, discountPct: totals.displayDiscountPct });
         }
       };
 
+      const switchToTargetMode = () => {
+        setDiscountEditMode("target");
+        setTargetTotalInput(String(Math.round(totals.grandTotal)));
+      };
+
+      /* Recent quotes tracking */
+      const pushRecent = async (id) => {
+        const next = [id, ...recentIds.filter(x => x !== id)].slice(0, RECENT_MAX);
+        setRecentIds(next);
+        try { await storage.set(RECENT_KEY, JSON.stringify(next)); } catch (e) {}
+      };
+
+      /* Save / load / duplicate */
       const saveQuote = async () => {
         const name = (saveName || quote.jobName || "Untitled").trim();
         if (!name) return;
@@ -891,9 +1319,10 @@
         try {
           await storage.set(SAVED_PREFIX + id, JSON.stringify(quote));
           const entry = { id, name, date: new Date().toISOString(), total: totals.grandTotal };
-          const next = [entry, ...savedList.filter(s => s.id !== id)].slice(0, 50);
+          const next = [entry, ...savedList].slice(0, 100);
           await storage.set(SAVED_INDEX_KEY, JSON.stringify(next));
           setSavedList(next);
+          await pushRecent(id);
           setShowSaveDialog(false);
           setSaveName("");
           showToast(`Saved "${name}"`);
@@ -903,23 +1332,81 @@
       const loadSaved = async (id) => {
         try {
           const r = await storage.get(SAVED_PREFIX + id);
-          if (r && r.value) { setQuote(mergeSaved(JSON.parse(r.value))); setShowLoadDialog(false); showToast("Loaded"); }
+          if (r && r.value) {
+            setQuote(mergeSaved(liveCatalog, JSON.parse(r.value)));
+            setShowLoadDialog(false);
+            await pushRecent(id);
+            showToast("Loaded");
+          }
         } catch (e) { showToast("Load failed"); }
       };
 
-      const deleteSaved = async (id) => {
+      const duplicateSaved = async (id) => {
         try {
-          await storage.delete(SAVED_PREFIX + id);
-          const next = savedList.filter(s => s.id !== id);
+          const r = await storage.get(SAVED_PREFIX + id);
+          if (!r || !r.value) return;
+          const original = JSON.parse(r.value);
+          const dupName = `${original.jobName || "Quote"} (copy)`;
+          const dupQuote = { ...original, jobName: dupName, jobDate: todayStr() };
+          const newId = `${slug(dupName)}-${Date.now().toString(36)}`;
+          await storage.set(SAVED_PREFIX + newId, JSON.stringify(dupQuote));
+          const entry = { id: newId, name: dupName, date: new Date().toISOString(), total: original.total || 0 };
+          const next = [entry, ...savedList].slice(0, 100);
           await storage.set(SAVED_INDEX_KEY, JSON.stringify(next));
           setSavedList(next);
-        } catch (e) {}
+          // Open the duplicate immediately
+          setQuote(mergeSaved(liveCatalog, dupQuote));
+          await pushRecent(newId);
+          setShowLoadDialog(false);
+          showToast(`Duplicated as "${dupName}"`);
+        } catch (e) { showToast("Duplicate failed"); }
       };
 
+      const deleteSaved = async (id, name) => {
+        setConfirm({
+          title: `Delete "${name}"?`,
+          body: "This saved quote will be removed from this device. Can't be undone.",
+          confirmLabel: "Delete",
+          danger: true,
+          onConfirm: async () => {
+            try {
+              await storage.delete(SAVED_PREFIX + id);
+              const next = savedList.filter(s => s.id !== id);
+              await storage.set(SAVED_INDEX_KEY, JSON.stringify(next));
+              setSavedList(next);
+              const nextRecent = recentIds.filter(x => x !== id);
+              setRecentIds(nextRecent);
+              try { await storage.set(RECENT_KEY, JSON.stringify(nextRecent)); } catch (e) {}
+            } catch (e) {}
+            setConfirm(null);
+          },
+        });
+      };
+
+      /* New quote — confirm if there's content */
       const newQuote = () => {
-        if (!confirm("Start a new quote? Current unsaved changes will be lost unless you've saved them.")) return;
-        setQuote(emptyQuote(true)); setTargetTotalInput(""); setGlobalDays(1);
-        showToast("New quote started");
+        const hasContent = quote.jobName || Object.values(quote.items).some(it => Number(it.qty) > 0 && !it.custom ? false : Number(it.qty) > 0);
+        const dirty = quote.jobName || quote.productionCompany || quote.producer ||
+          Object.values(quote.items).some(it => it.custom);
+        if (dirty) {
+          setConfirm({
+            title: "Start a new quote?",
+            body: "Any unsaved changes to the current quote will be lost. Saved quotes are not affected.",
+            confirmLabel: "New quote",
+            onConfirm: () => {
+              setQuote(emptyQuote(liveCatalog, true)); setTargetTotalInput(""); setGlobalDays(1);
+              setDiscountEditMode("percent");
+              setItemSearch("");
+              setConfirm(null);
+              showToast("New quote started");
+            },
+          });
+        } else {
+          setQuote(emptyQuote(liveCatalog, true)); setTargetTotalInput(""); setGlobalDays(1);
+          setDiscountEditMode("percent");
+          setItemSearch("");
+          showToast("New quote started");
+        }
       };
 
       const handleDownloadPDF = async () => {
@@ -927,7 +1414,7 @@
         setDownloading(true);
         showToast("Building PDF…");
         try {
-          await generatePDF(quote, totals);
+          await generatePDF(quote, totals, brandName, liveCatalog);
           showToast("PDF downloaded");
         } catch (e) {
           console.error(e);
@@ -935,28 +1422,122 @@
         } finally { setDownloading(false); }
       };
 
+      const handleSharePDF = async () => {
+        if (downloading) return;
+        setDownloading(true);
+        showToast("Preparing PDF…");
+        try {
+          const result = await sharePDF(quote, totals, brandName, liveCatalog);
+          showToast(result === "shared" ? "Shared" : "Downloaded");
+        } catch (e) {
+          if (e.name !== "AbortError") {
+            console.error(e);
+            showToast("Share failed");
+          }
+        } finally { setDownloading(false); }
+      };
+
+      const openSettings = () => {
+        setBrandInput(brandName);
+        setShowSettingsDialog(true);
+      };
+
+      const saveSettings = async () => {
+        const name = (brandInput || "").trim() || DEFAULT_BRAND;
+        setBrandName(name);
+        try { await storage.set(BRAND_KEY, name); } catch (e) {}
+        setShowSettingsDialog(false);
+        showToast("Brand updated");
+      };
+
+      const saveCatalog = async (newOverrides) => {
+        setCatalogOverrides(newOverrides);
+        try { await storage.set(CATALOG_OVERRIDES_KEY, JSON.stringify(newOverrides)); } catch (e) {}
+        setShowCatalogEditor(false);
+        showToast("Catalog updated");
+      };
+
       const sectionPicked = (secKey) => Object.values(quote.items).filter(it => it.section === secKey && Number(it.qty) > 0).length;
-      const sectionSubtotal = (secKey) => Object.values(quote.items).filter(it => it.section === secKey)
-        .reduce((s, it) => s + Number(it.price) * Number(it.days) * Number(it.qty), 0);
+      const sectionSubtotal = (secKey) => totals.sectionSubtotals[secKey] || 0;
+
+      /* Item search filter */
+      const matchesSearch = (it) => {
+        if (!itemSearch.trim()) return true;
+        return it.name.toLowerCase().includes(itemSearch.toLowerCase());
+      };
+      const sectionHasMatches = (secKey) => {
+        if (!itemSearch.trim()) return true;
+        return Object.values(quote.items).some(it => it.section === secKey && matchesSearch(it));
+      };
+      const searchActive = !!itemSearch.trim();
+
+      /* Sticky section nav: track which section is in view */
+      useEffect(() => {
+        if (mode !== "edit") return;
+        const observer = new IntersectionObserver((entries) => {
+          const visible = entries.filter(e => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+          if (visible[0]) setActiveSection(visible[0].target.dataset.section);
+        }, { rootMargin: "-100px 0px -50% 0px", threshold: 0 });
+        Object.values(sectionRefs.current).forEach(el => el && observer.observe(el));
+        return () => observer.disconnect();
+      }, [mode, liveCatalog]);
+
+      const scrollToSection = (secKey) => {
+        const el = sectionRefs.current[secKey];
+        if (!el) return;
+        // Make sure it's open
+        if (!openSections[secKey]) setOpenSections(o => ({ ...o, [secKey]: true }));
+        // Allow render
+        setTimeout(() => {
+          const top = el.getBoundingClientRect().top + window.pageYOffset - 110;
+          window.scrollTo({ top, behavior: "smooth" });
+        }, 80);
+      };
+
+      /* Saved list filtered + tab */
+      const filteredSavedList = useMemo(() => {
+        const q = savedSearch.trim().toLowerCase();
+        let list = savedList;
+        if (savedTab === "recent") {
+          const lookup = new Map(savedList.map(s => [s.id, s]));
+          list = recentIds.map(id => lookup.get(id)).filter(Boolean);
+        }
+        if (q) list = list.filter(s => s.name.toLowerCase().includes(q));
+        return list;
+      }, [savedList, recentIds, savedSearch, savedTab]);
+
+      /* Recent quotes for the in-app strip */
+      const recentEntries = useMemo(() => {
+        const lookup = new Map(savedList.map(s => [s.id, s]));
+        return recentIds.map(id => lookup.get(id)).filter(Boolean).slice(0, 3);
+      }, [savedList, recentIds]);
 
       if (mode === "preview") {
-        return <PreviewView quote={quote} totals={totals} onBack={() => setMode("edit")} onDownload={handleDownloadPDF} downloading={downloading} />;
+        return <PreviewView quote={quote} totals={totals} brandName={brandName} catalog={liveCatalog}
+          onBack={() => setMode("edit")} onDownload={handleDownloadPDF} onShare={handleSharePDF} downloading={downloading} />;
       }
+
+      const overrideActive = quote.targetTotalOverride !== null && quote.targetTotalOverride !== undefined;
 
       return (
         <div className="min-h-screen bg-slate-50 text-slate-900">
+          {/* Header */}
           <header className="sticky top-0 z-30 bg-slate-900 text-slate-50 safe-top">
             <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <button onClick={openSettings} className="flex items-center gap-3 hover:opacity-80 transition text-left min-w-0">
+                <div className="w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0">
                   <BulbIcon size={20} className="text-slate-50" />
                 </div>
-                <div className="leading-tight">
-                  <div className="text-[10px] uppercase tracking-[0.18em] text-blue-300 font-semibold">Big Al's Lighting Emporium</div>
+                <div className="leading-tight min-w-0">
+                  <div className="text-[10px] uppercase tracking-[0.18em] text-blue-300 font-semibold truncate">{brandName}</div>
                   <div className="text-lg font-serif" style={{ fontFamily: "'Fraunces', serif", fontWeight: 450 }}>Quote Builder</div>
                 </div>
-              </div>
+              </button>
               <div className="flex items-center gap-2">
+                <button onClick={openSettings} title="Settings"
+                  className="h-10 w-10 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition">
+                  <SettingsIcon size={16} />
+                </button>
                 <button onClick={() => setShowLoadDialog(true)}
                   className="h-10 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-medium flex items-center gap-2 transition">
                   <FolderIcon size={16} /><span className="hidden sm:inline">Open</span>
@@ -971,10 +1552,43 @@
                 </button>
               </div>
             </div>
+
+            {/* Recent quotes strip */}
+            {recentEntries.length > 0 && (
+              <div className="max-w-6xl mx-auto px-4 pb-3 flex items-center gap-2 overflow-x-auto no-scrollbar">
+                <span className="text-[10px] uppercase tracking-[0.18em] text-slate-400 font-semibold shrink-0 flex items-center gap-1">
+                  <ClockIcon size={11} /> Recent
+                </span>
+                {recentEntries.map(s => (
+                  <button key={s.id} onClick={() => loadSaved(s.id)}
+                    className="shrink-0 px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 truncate max-w-[180px]">
+                    {s.name}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Section nav strip */}
+            <div className="max-w-6xl mx-auto px-4 pb-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+              {Object.entries(liveCatalog).map(([secKey, sec]) => {
+                const picked = sectionPicked(secKey);
+                const isActive = activeSection === secKey;
+                return (
+                  <button key={secKey} onClick={() => scrollToSection(secKey)}
+                    className={`shrink-0 px-2.5 py-1 rounded-md text-xs font-medium transition whitespace-nowrap ${
+                      isActive ? "bg-blue-500 text-white" : "bg-slate-800 hover:bg-slate-700 text-slate-300"
+                    }`}>
+                    {sec.label}
+                    {picked > 0 && <span className="ml-1.5 tabular-nums opacity-70">{picked}</span>}
+                  </button>
+                );
+              })}
+            </div>
           </header>
 
           <main className="max-w-6xl mx-auto px-4 pb-56 pt-6 space-y-6">
 
+            {/* Job details */}
             <section className="bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden">
               <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
                 <h2 className="text-xs uppercase tracking-[0.18em] text-slate-500 font-semibold">Job Details</h2>
@@ -990,6 +1604,7 @@
               </div>
             </section>
 
+            {/* Schedule + Defaults */}
             <section className="bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden">
               <div className="px-5 py-3 border-b border-slate-100 flex items-center gap-2">
                 <CalendarIcon size={16} className="text-slate-400" />
@@ -1025,7 +1640,7 @@
                       Pre-loads our standard kit (floppies, c-stands, cardellinis, grid cloth, and so on). Turn off to start from zero.
                     </div>
                   </div>
-                  <button onClick={toggleDefaults} role="switch" aria-checked={quote.defaultsOn}
+                  <button onClick={requestToggleDefaults} role="switch" aria-checked={quote.defaultsOn}
                     className={`relative w-14 h-8 rounded-full transition-colors shrink-0 ${quote.defaultsOn ? "bg-blue-500" : "bg-slate-300"}`}>
                     <span className={`absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow transition-transform ${quote.defaultsOn ? "translate-x-6" : "translate-x-0"}`} />
                   </button>
@@ -1033,18 +1648,48 @@
               </div>
             </section>
 
-            {Object.entries(CATALOG).map(([secKey, sec]) => {
-              const isOpen = !!openSections[secKey];
+            {/* Item search */}
+            <section className="bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden">
+              <div className="p-3">
+                <div className="flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-2.5">
+                  <SearchIcon size={16} className="text-slate-400 shrink-0" />
+                  <input value={itemSearch} onChange={e => setItemSearch(e.target.value)}
+                    placeholder="Search items across all sections — e.g. skypanel, cardellini…"
+                    className="flex-1 bg-transparent text-sm focus:outline-none" />
+                  {itemSearch && (
+                    <button onClick={() => setItemSearch("")} className="p-1 rounded hover:bg-slate-200">
+                      <XIcon size={14} className="text-slate-400" />
+                    </button>
+                  )}
+                </div>
+                {searchActive && (
+                  <div className="text-xs text-slate-500 mt-2 px-1">
+                    Showing items matching "<span className="font-medium text-slate-700">{itemSearch}</span>". Sections without matches are hidden.
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Catalog sections */}
+            {Object.entries(liveCatalog).map(([secKey, sec]) => {
+              const isOpen = !!openSections[secKey] || searchActive;
               const picked = sectionPicked(secKey);
               const sub = sectionSubtotal(secKey);
               const isConsumable = !!sec.excludeFromDiscount;
               const sectionItems = Object.entries(quote.items).filter(([_, it]) => it.section === secKey);
+              if (searchActive && !sectionHasMatches(secKey)) return null;
+              const visibleItems = searchActive ? sectionItems.filter(([_, it]) => matchesSearch(it)) : sectionItems;
+
               return (
-                <section key={secKey} className="bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden">
-                  <button onClick={() => setOpenSections(o => ({ ...o, [secKey]: !isOpen }))}
-                    className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition text-left">
+                <section key={secKey}
+                  ref={el => { sectionRefs.current[secKey] = el; }}
+                  data-section={secKey}
+                  className="bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden scroll-mt-32">
+                  <button onClick={() => !searchActive && setOpenSections(o => ({ ...o, [secKey]: !isOpen }))}
+                    disabled={searchActive}
+                    className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition text-left disabled:cursor-default disabled:hover:bg-transparent">
                     <div className="flex items-center gap-3">
-                      {isOpen ? <ChevDownIcon size={20} className="text-slate-400" /> : <ChevRightIcon size={20} className="text-slate-400" />}
+                      {!searchActive && (isOpen ? <ChevDownIcon size={20} className="text-slate-400" /> : <ChevRightIcon size={20} className="text-slate-400" />)}
                       <h3 className="text-lg font-serif" style={{ fontFamily: "'Fraunces', serif" }}>{sec.label}</h3>
                       {isConsumable && (<span className="text-[9px] uppercase tracking-widest font-bold bg-slate-900 text-blue-300 px-2 py-0.5 rounded">No discount</span>)}
                     </div>
@@ -1055,22 +1700,26 @@
                   </button>
                   {isOpen && (
                     <div className="border-t border-slate-100">
-                      {sectionItems.map(([id, it]) => (
+                      {visibleItems.map(([id, it]) => (
                         <ItemRow key={id} id={id} item={it} onChange={patch => updateItem(id, patch)}
-                          onDelete={it.custom ? () => deleteItem(id) : null} />
+                          onDelete={it.custom ? () => deleteItem(id) : null}
+                          highlight={searchActive && matchesSearch(it)} />
                       ))}
-                      <div className="px-4 py-3 border-t border-slate-100">
-                        <button onClick={() => addCustomItem(secKey)}
-                          className="text-sm text-blue-700 hover:text-blue-800 font-medium flex items-center gap-1">
-                          <PlusIcon size={16} /> Add custom item
-                        </button>
-                      </div>
+                      {!searchActive && (
+                        <div className="px-4 py-3 border-t border-slate-100">
+                          <button onClick={() => addCustomItem(secKey)}
+                            className="text-sm text-blue-700 hover:text-blue-800 font-medium flex items-center gap-1">
+                            <PlusIcon size={16} /> Add custom item
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </section>
               );
             })}
 
+            {/* Services & Transport */}
             <section className="bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden">
               <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3">
                 <h3 className="text-lg font-serif" style={{ fontFamily: "'Fraunces', serif" }}>Services & Transport</h3>
@@ -1100,6 +1749,7 @@
               </div>
             </section>
 
+            {/* Consumables estimate */}
             <section className="bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden">
               <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-3">
                 <h3 className="text-lg font-serif" style={{ fontFamily: "'Fraunces', serif" }}>Consumables Estimate</h3>
@@ -1117,6 +1767,7 @@
               </div>
             </section>
 
+            {/* Notes */}
             <section className="bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden">
               <div className="px-5 py-4 border-b border-slate-100">
                 <h3 className="text-lg font-serif" style={{ fontFamily: "'Fraunces', serif" }}>Notes</h3>
@@ -1129,27 +1780,34 @@
             </section>
           </main>
 
+          {/* Sticky bottom bar */}
           <div className="fixed bottom-0 inset-x-0 bg-slate-900 text-slate-50 shadow-2xl z-30 safe-bottom">
             <div className="max-w-6xl mx-auto px-4 py-4">
               <div className="grid grid-cols-12 gap-4 items-end">
                 <div className="col-span-12 md:col-span-7">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-semibold">Discount</span>
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-semibold">
+                      {overrideActive ? "Total locked" : "Discount"}
+                    </span>
                     <div className="flex bg-slate-800 rounded-md overflow-hidden text-[11px]">
-                      <button onClick={() => setDiscountEditMode("percent")}
-                        className={`px-2 py-0.5 ${discountEditMode === "percent" ? "bg-blue-500 text-white font-semibold" : "text-slate-400"}`}>By %</button>
-                      <button onClick={() => { setDiscountEditMode("target"); setTargetTotalInput(totals.grandTotal.toFixed(2)); }}
-                        className={`px-2 py-0.5 ${discountEditMode === "target" ? "bg-blue-500 text-white font-semibold" : "text-slate-400"}`}>By total</button>
+                      <button onClick={switchToPercentMode}
+                        className={`px-2 py-0.5 ${discountEditMode === "percent" && !overrideActive ? "bg-blue-500 text-white font-semibold" : "text-slate-400"}`}>By %</button>
+                      <button onClick={switchToTargetMode}
+                        className={`px-2 py-0.5 ${discountEditMode === "target" || overrideActive ? "bg-blue-500 text-white font-semibold" : "text-slate-400"}`}>By total</button>
                     </div>
+                    {overrideActive && (
+                      <button onClick={clearTargetOverride}
+                        className="text-[11px] text-slate-400 hover:text-blue-300 underline underline-offset-2">unlock</button>
+                    )}
                   </div>
-                  {discountEditMode === "percent" ? (
+                  {discountEditMode === "percent" && !overrideActive ? (
                     <div className="flex items-center gap-3">
-                      <input type="range" min="0" max="100" step="0.5" value={quote.discountPct}
-                        onChange={e => update({ discountPct: parseFloat(e.target.value) })}
+                      <input type="range" min="0" max="100" step="1" value={quote.discountPct}
+                        onChange={e => update({ discountPct: parseInt(e.target.value) || 0 })}
                         className="flex-1 accent-blue-500" />
                       <div className="flex items-center gap-1 bg-slate-800 rounded-lg px-2">
-                        <input type="number" min="0" max="100" step="0.5" value={quote.discountPct}
-                          onChange={e => update({ discountPct: Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) })}
+                        <input type="number" min="0" max="100" step="1" value={quote.discountPct}
+                          onChange={e => update({ discountPct: Math.max(0, Math.min(100, parseInt(e.target.value) || 0)) })}
                           className="w-14 py-2 bg-transparent text-right tabular-nums focus:outline-none"
                           style={{ fontFamily: "'JetBrains Mono', monospace" }} />
                         <span className="text-slate-400">%</span>
@@ -1158,24 +1816,62 @@
                   ) : (
                     <div className="flex items-center gap-2">
                       <span className="text-slate-400">£</span>
-                      <input type="number" min="0" step="0.01" value={targetTotalInput}
-                        onChange={e => setTargetTotalInput(e.target.value)} placeholder="Target total"
+                      <input type="number" min="0" step="1" value={targetTotalInput}
+                        onChange={e => setTargetTotalInput(e.target.value)}
+                        onKeyDown={e => e.key === "Enter" && applyTargetTotal()}
+                        placeholder="Target total"
                         className="flex-1 py-2 px-3 bg-slate-800 rounded-lg tabular-nums focus:outline-none focus:ring-2 focus:ring-blue-400"
                         style={{ fontFamily: "'JetBrains Mono', monospace" }} />
                       <button onClick={applyTargetTotal}
                         className="py-2 px-4 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-400">Apply</button>
                     </div>
                   )}
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-400 mt-2 tabular-nums" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                    <span>Kit: {money(totals.discountable)}</span>
-                    <span>− Discount: {money(totals.discountable - totals.kitAfterDiscount)}</span>
-                    <span>+ Services: {money(totals.services)}</span>
-                    {(totals.consumablesPicked + totals.consumablesEst) > 0 && (<span>+ Consumables: {money(totals.consumablesPicked + totals.consumablesEst)}</span>)}
-                  </div>
+
+                  {/* Section breakdown — collapsible */}
+                  <details className="mt-2 group">
+                    <summary className="cursor-pointer text-[11px] text-slate-400 hover:text-slate-200 inline-flex items-center gap-1 select-none">
+                      <ChevRightIcon size={11} className="transition-transform group-open:rotate-90" />
+                      Breakdown
+                    </summary>
+                    <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-[11px] text-slate-400 tabular-nums" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                      {Object.entries(liveCatalog).map(([secKey, sec]) => {
+                        const sub = totals.sectionSubtotals[secKey] || 0;
+                        if (sub === 0) return null;
+                        return (
+                          <div key={secKey} className="flex justify-between gap-2">
+                            <span className="truncate">{sec.label}</span>
+                            <span className="text-slate-300">{money(sub)}</span>
+                          </div>
+                        );
+                      })}
+                      <div className="flex justify-between gap-2">
+                        <span>Gaffer</span><span className="text-slate-300">{money(totals.gaffer)}</span>
+                      </div>
+                      <div className="flex justify-between gap-2">
+                        <span>Van</span><span className="text-slate-300">{money(totals.van)}</span>
+                      </div>
+                      {totals.delivery > 0 && (
+                        <div className="flex justify-between gap-2">
+                          <span>Delivery</span><span className="text-slate-300">{money(totals.delivery)}</span>
+                        </div>
+                      )}
+                      {totals.consumablesEst > 0 && (
+                        <div className="flex justify-between gap-2">
+                          <span>Consumables est.</span><span className="text-slate-300">{money(totals.consumablesEst)}</span>
+                        </div>
+                      )}
+                      <div className="col-span-2 sm:col-span-3 border-t border-slate-700 pt-1 mt-1 flex justify-between">
+                        <span>Discount ({totals.displayDiscountPct}%)</span>
+                        <span className="text-slate-300">−{money(totals.discountAmount)}</span>
+                      </div>
+                    </div>
+                  </details>
                 </div>
                 <div className="col-span-12 md:col-span-5 flex items-center justify-between md:justify-end gap-3">
                   <div className="text-right">
-                    <div className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-semibold">Total</div>
+                    <div className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-semibold">
+                      {overrideActive ? "Total (locked)" : "Total"}
+                    </div>
                     <div className="text-3xl font-serif text-blue-300 tabular-nums leading-tight" style={{ fontFamily: "'Fraunces', serif" }}>
                       {money(totals.grandTotal)}
                     </div>
@@ -1189,6 +1885,7 @@
             </div>
           </div>
 
+          {/* Save dialog */}
           {showSaveDialog && (
             <Modal onClose={() => setShowSaveDialog(false)} title="Save this quote">
               <p className="text-sm text-slate-500 mb-3">Saves to this device only. You can load it again anytime.</p>
@@ -1202,21 +1899,52 @@
             </Modal>
           )}
 
+          {/* Load dialog with tabs + search + duplicate */}
           {showLoadDialog && (
             <Modal onClose={() => setShowLoadDialog(false)} title="Saved quotes">
-              {savedList.length === 0 ? (
-                <p className="text-sm text-slate-500">No saved quotes yet.</p>
+              <div className="space-y-3">
+                <div className="flex bg-slate-100 rounded-lg p-1 text-sm">
+                  <button onClick={() => setSavedTab("all")}
+                    className={`flex-1 py-1.5 rounded-md font-medium ${savedTab === "all" ? "bg-white shadow-sm text-slate-900" : "text-slate-500"}`}>
+                    <ListIcon size={14} className="inline mr-1.5" />All
+                  </button>
+                  <button onClick={() => setSavedTab("recent")}
+                    className={`flex-1 py-1.5 rounded-md font-medium ${savedTab === "recent" ? "bg-white shadow-sm text-slate-900" : "text-slate-500"}`}>
+                    <ClockIcon size={14} className="inline mr-1.5" />Recent
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-2">
+                  <SearchIcon size={14} className="text-slate-400" />
+                  <input value={savedSearch} onChange={e => setSavedSearch(e.target.value)}
+                    placeholder="Search saved quotes…"
+                    className="flex-1 bg-transparent text-sm focus:outline-none" />
+                  {savedSearch && (
+                    <button onClick={() => setSavedSearch("")} className="p-0.5 rounded hover:bg-slate-200">
+                      <XIcon size={12} className="text-slate-400" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {filteredSavedList.length === 0 ? (
+                <p className="text-sm text-slate-500 py-6 text-center">
+                  {savedSearch ? "No matches." : (savedTab === "recent" ? "No recent quotes yet." : "No saved quotes yet.")}
+                </p>
               ) : (
-                <div className="divide-y divide-slate-100 max-h-96 overflow-auto -mx-2">
-                  {savedList.map(s => (
-                    <div key={s.id} className="flex items-center justify-between gap-3 px-2 py-3">
+                <div className="divide-y divide-slate-100 max-h-96 overflow-auto -mx-2 mt-3">
+                  {filteredSavedList.map(s => (
+                    <div key={s.id} className="flex items-center justify-between gap-2 px-2 py-3">
                       <button onClick={() => loadSaved(s.id)} className="text-left flex-1 min-w-0">
                         <div className="font-semibold truncate">{s.name}</div>
                         <div className="text-xs text-slate-500 tabular-nums">
                           {new Date(s.date).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}{" · "}{money(s.total)}
                         </div>
                       </button>
-                      <button onClick={() => deleteSaved(s.id)}
+                      <button onClick={() => duplicateSaved(s.id)} title="Duplicate"
+                        className="p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50">
+                        <CopyIcon size={16} />
+                      </button>
+                      <button onClick={() => deleteSaved(s.id, s.name)} title="Delete"
                         className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50">
                         <TrashIcon size={16} />
                       </button>
@@ -1227,8 +1955,61 @@
             </Modal>
           )}
 
+          {/* Settings */}
+          {showSettingsDialog && (
+            <Modal onClose={() => setShowSettingsDialog(false)} title="Settings">
+              <div className="space-y-5">
+                <div>
+                  <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 font-semibold mb-1.5">Brand name</div>
+                  <input autoFocus value={brandInput} onChange={e => setBrandInput(e.target.value)}
+                    placeholder={DEFAULT_BRAND}
+                    className="w-full px-3 py-3 bg-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    onKeyDown={e => e.key === "Enter" && saveSettings()} />
+                  <p className="text-xs text-slate-500 mt-2">
+                    Appears in the header, on the PDF export, and in the file name. Saved on this device.
+                  </p>
+                </div>
+
+                <div className="border-t border-slate-100 pt-5">
+                  <button onClick={() => { setShowSettingsDialog(false); setShowCatalogEditor(true); }}
+                    className="w-full text-left px-4 py-3 bg-slate-50 hover:bg-slate-100 rounded-lg transition flex items-center justify-between">
+                    <div>
+                      <div className="font-semibold text-sm">Catalog editor</div>
+                      <div className="text-xs text-slate-500">Edit master prices, add or remove items.</div>
+                    </div>
+                    <ChevRightIcon size={16} className="text-slate-400" />
+                  </button>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 mt-5">
+                <button onClick={() => setShowSettingsDialog(false)} className="px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100">Cancel</button>
+                <button onClick={saveSettings} className="px-4 py-2 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800">Save</button>
+              </div>
+            </Modal>
+          )}
+
+          {/* Catalog editor */}
+          {showCatalogEditor && (
+            <CatalogEditor overrides={catalogOverrides}
+              onSave={saveCatalog}
+              onClose={() => setShowCatalogEditor(false)} />
+          )}
+
+          {/* Confirmation dialog */}
+          {confirm && (
+            <ConfirmDialog
+              title={confirm.title}
+              body={confirm.body}
+              confirmLabel={confirm.confirmLabel}
+              danger={confirm.danger}
+              onConfirm={confirm.onConfirm}
+              onCancel={() => setConfirm(null)}
+            />
+          )}
+
+          {/* Toast */}
           {toast && (
-            <div className="fixed top-4 left-1/2 -translate-x-1/2 bg-slate-900 text-blue-300 px-4 py-2 rounded-full text-sm font-medium shadow-xl z-50">
+            <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-slate-900 text-blue-300 px-4 py-2 rounded-full text-sm font-medium shadow-xl z-50">
               {toast}
             </div>
           )}
@@ -1238,6 +2019,5 @@
 
     ReactDOM.createRoot(document.getElementById("root")).render(<QuoteGenerator />);
   </script>
-
 </body>
 </html>
