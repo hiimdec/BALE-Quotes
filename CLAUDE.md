@@ -9,8 +9,13 @@ no bundler, no framework scaffolding.
 
 ## Hard rules
 
-- **Never split the app into multiple files.** Self-containment is a feature, not an
-  oversight. It must keep working as a single file served from GitHub Pages.
+- **Never split the app into multiple files, with one sanctioned exception: `sw.js`.**
+  Self-containment is a feature, not an oversight. The app itself must keep working as a
+  single `index.html` served from GitHub Pages. The lone exception is the service worker
+  (`sw.js`) in the repo root — a service worker *must* be a separate same-origin script
+  (it can't be inlined into the HTML or loaded from a blob URL), so offline support is
+  impossible without it. That's the only file allowed outside `index.html`; the rule holds
+  for everything else.
 - **Never add a build step.** No Vite, no Webpack, no JSX transpilation at build time.
   The React inside is already compiled to `React.createElement(...)` calls — match that
   style when adding components. Do not introduce raw JSX.

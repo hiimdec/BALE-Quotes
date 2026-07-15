@@ -2850,6 +2850,34 @@ function QuoteGenerator() {
     setToast(msg);
     setTimeout(() => setToast(null), 2200);
   };
+
+  /* Register the service worker for offline support (see sw.js). Relative path
+     so the scope is correct on the GitHub Pages subpath. When it fetches a new
+     index.html in the background it messages us — we nudge, never auto-reload. */
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    let announced = false;
+    const announce = () => {
+      if (announced) return;
+      announced = true;
+      showToast("Update ready — reopen to apply");
+    };
+    const onMessage = e => {
+      if (e.data && e.data.type === "SW_UPDATE_READY") announce();
+    };
+    // Listen before registering so we can't miss an early notification.
+    navigator.serviceWorker.addEventListener("message", onMessage);
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+    // Tell the worker we're listening — covers the case where it detected the
+    // update before this handler was attached (controller is set from the 2nd
+    // launch on, which is exactly when there's a prior version to update from).
+    navigator.serviceWorker.ready.then(() => {
+      const sw = navigator.serviceWorker.controller;
+      if (sw) sw.postMessage({ type: "CLIENT_READY" });
+    });
+    return () =>
+      navigator.serviceWorker.removeEventListener("message", onMessage);
+  }, []);
   const update = patch => setQuote(q => ({
     ...q,
     ...patch
