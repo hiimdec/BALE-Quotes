@@ -743,6 +743,15 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     /* Hide scrollbar on the section nav strip */
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    /* Locked-total guard rail. Tuned for the dark totals bar — the inlined
+       Tailwind build has no amber, and its reds are for light backgrounds. */
+    .guard-rail {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; margin-bottom: 12px;
+      border-radius: 8px; font-size: 12px; font-weight: 500;
+    }
+    .guard-rail-warn { background: rgba(245, 158, 11, 0.14); color: #fcd34d; }
+    .guard-rail-crit { background: rgba(239, 68, 68, 0.16); color: #fca5a5; }
   </style>
 </head>
 <body>
@@ -1508,6 +1517,9 @@ const RECENT_KEY = "alq:recentIds";
 const QUOTE_VERSION = 3;
 const DEFAULT_BRAND = "Al Rice Lights";
 const RECENT_MAX = 5;
+// Effective discount above this flags a locked total that's absorbing kit.
+// Default discountPct is 30, so 50 is a meaningful overshoot.
+const DISCOUNT_WARN_PCT = 50;
 const money = n => {
   if (isNaN(n) || n === null) n = 0;
   return "£" + Number(n).toLocaleString("en-GB", {
@@ -3005,12 +3017,19 @@ function QuoteGenerator() {
     const services = gaffer + van + delivery;
     const nonDiscountable = consumablesPicked + consumablesEst + services;
     let kitAfterDiscount, grandTotal, discountAmount, displayDiscountPct;
+    let overrideWarning = false,
+      overrideCritical = false;
     if (quote.targetTotalOverride !== null && quote.targetTotalOverride !== undefined) {
       const target = Number(quote.targetTotalOverride);
       grandTotal = target;
       kitAfterDiscount = Math.max(0, target - nonDiscountable);
       discountAmount = Math.max(0, discountable - kitAfterDiscount);
       displayDiscountPct = discountable > 0 ? Math.round(discountAmount / discountable * 100) : 0;
+      // A locked total silently absorbs anything added afterwards. Flag it —
+      // the Math.max(0, …) above hides the kit going free once services alone
+      // meet the target.
+      overrideWarning = displayDiscountPct > DISCOUNT_WARN_PCT;
+      overrideCritical = target - nonDiscountable <= 0;
     } else {
       const pct = Math.max(0, Math.min(100, Number(quote.discountPct) || 0));
       kitAfterDiscount = discountable * (1 - pct / 100);
@@ -3031,7 +3050,9 @@ function QuoteGenerator() {
       services,
       nonDiscountable,
       grandTotal,
-      sectionSubtotals
+      sectionSubtotals,
+      overrideWarning,
+      overrideCritical
     };
   }, [quote, liveCatalog]);
   const applyTargetTotal = () => {
@@ -3711,7 +3732,12 @@ function QuoteGenerator() {
     className: "fixed bottom-0 inset-x-0 bg-slate-900 text-slate-50 shadow-2xl z-30 safe-bottom"
   }, /*#__PURE__*/React.createElement("div", {
     className: "max-w-6xl mx-auto px-4 py-4"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, (totals.overrideCritical || totals.overrideWarning) && /*#__PURE__*/React.createElement("div", {
+    className: `guard-rail ${totals.overrideCritical ? "guard-rail-crit" : "guard-rail-warn"}`
+  }, /*#__PURE__*/React.createElement(AlertIcon, {
+    size: 14,
+    className: "shrink-0"
+  }), /*#__PURE__*/React.createElement("span", null, totals.overrideCritical ? `Services alone exceed the locked total. Kit is being quoted at ${money(totals.kitAfterDiscount)}.` : `Effective discount is ${totals.displayDiscountPct}% — locked total is absorbing added kit.`)), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-12 gap-4 items-end"
   }, /*#__PURE__*/React.createElement("div", {
     className: "col-span-12 md:col-span-7"
