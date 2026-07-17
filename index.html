@@ -1514,8 +1514,13 @@ const SAVED_PREFIX = "alq:saved:";
 const BRAND_KEY = "alq:brandName";
 const CATALOG_OVERRIDES_KEY = "alq:catalogOverrides";
 const RECENT_KEY = "alq:recentIds";
+const QUOTE_PREFIX_KEY = "alq:quoteNumberPrefix";
+// Counter is stored per year — QUOTE_COUNTER_PREFIX + year, e.g.
+// "alq:quoteCounter:2026". Keeps the annual reset free of migration logic.
+const QUOTE_COUNTER_PREFIX = "alq:quoteCounter:";
 const QUOTE_VERSION = 3;
 const DEFAULT_BRAND = "Al Rice Lights";
+const DEFAULT_QUOTE_PREFIX = "ALQ";
 const RECENT_MAX = 5;
 // Effective discount above this flags a locked total that's absorbing kit.
 // Default discountPct is 30, so 50 is a meaningful overshoot.
@@ -1614,6 +1619,10 @@ function buildItems(catalog, defaultsOn) {
 const emptyQuote = (catalog, defaultsOn = true) => ({
   version: QUOTE_VERSION,
   jobName: "",
+  // Allocated lazily on first save/export — never here. emptyQuote() runs in a
+  // useState initialiser and storage is async, so allocating here would burn a
+  // number on every draft that's started and abandoned.
+  quoteNumber: null,
   jobDate: todayStr(),
   dateStart: "",
   dateEnd: "",
@@ -1670,6 +1679,25 @@ function mergeSaved(catalog, saved) {
     items: freshItems,
     version: QUOTE_VERSION
   };
+}
+
+/* Returns the quote's number, allocating one on first use. Format is
+   {PREFIX}-{YYYY}-{NNN}, e.g. ALQ-2026-014 — padded to three digits, and
+   rolling over to four on its own if it ever gets there. Once assigned, the
+   number is frozen on the quote and never changes. Per-device; never syncs. */
+async function ensureQuoteNumber(quote, prefix) {
+  if (quote.quoteNumber) return quote.quoteNumber;
+  const year = new Date().getFullYear();
+  const key = QUOTE_COUNTER_PREFIX + year;
+  let n = 0;
+  try {
+    const r = await storage.get(key);
+    n = parseInt(r && r.value, 10) || 0;
+  } catch (e) {}
+  n += 1;
+  await storage.set(key, String(n));
+  const p = (prefix || "").trim() || DEFAULT_QUOTE_PREFIX;
+  return `${p}-${year}-${String(n).padStart(3, "0")}`;
 }
 
 /* ─────────── PDF generation ─────────── */
@@ -1737,6 +1765,19 @@ async function generatePDF(quote, totals, brandName, catalog, returnBlob = false
   y += 7;
   setText(9, "normal", MUTED);
   doc.text("Lighting Quotation", mL, y);
+  // Quote number sits under the date block, top right. Only drawn once one has
+  // been allocated, so the header is unchanged for quotes without a number.
+  if (quote.quoteNumber) {
+    setText(7, "bold", MUTED);
+    doc.text("QUOTE NO.", pageW - mR, y - 2, {
+      align: "right"
+    });
+    setText(10, "bold", DARK);
+    doc.text(quote.quoteNumber, pageW - mR, y + 3, {
+      align: "right"
+    });
+    y += 6;
+  }
   y += 5;
   drawLine(y, DARK, 0.6);
   y += 6;
@@ -2751,6 +2792,7 @@ function QuoteGenerator() {
   // Core quote state
   const [quote, setQuote] = useState(() => emptyQuote(CATALOG_DEFAULT, true));
   const [brandName, setBrandName] = useState(DEFAULT_BRAND);
+  const [quoteNumberPrefix, setQuoteNumberPrefix] = useState(DEFAULT_QUOTE_PREFIX);
   const [mode, setMode] = useState("edit");
   const [openSections, setOpenSections] = useState({
     lights: true
@@ -2777,6 +2819,7 @@ function QuoteGenerator() {
   const [confirm, setConfirm] = useState(null); // { title, body, confirmLabel, danger, onConfirm }
 
   const [brandInput, setBrandInput] = useState("");
+  const [prefixInput, setPrefixInput] = useState("");
   const [saveName, setSaveName] = useState("");
   const [toast, setToast] = useState(null);
   const [globalDays, setGlobalDays] = useState(1);
@@ -2809,6 +2852,10 @@ function QuoteGenerator() {
       try {
         const r = await storage.get(BRAND_KEY);
         if (r && r.value) setBrandName(r.value);
+      } catch (e) {}
+      try {
+        const r = await storage.get(QUOTE_PREFIX_KEY);
+        if (r && r.value) setQuoteNumberPrefix(r.value);
       } catch (e) {}
     })();
   }, []);
@@ -3094,13 +3141,28 @@ function QuoteGenerator() {
     } catch (e) {}
   };
 
+  /* Allocate the quote number on first save/export and freeze it on the quote.
+     Returns the quote to actually use — setQuote won't have landed yet. */
+  const withQuoteNumber = async () => {
+    const number = await ensureQuoteNumber(quote, quoteNumberPrefix);
+    if (number === quote.quoteNumber) return quote;
+    update({
+      quoteNumber: number
+    });
+    return {
+      ...quote,
+      quoteNumber: number
+    };
+  };
+
   /* Save / load / duplicate */
   const saveQuote = async () => {
     const name = (saveName || quote.jobName || "Untitled").trim();
     if (!name) return;
     const id = `${slug(name)}-${Date.now().toString(36)}`;
     try {
-      await storage.set(SAVED_PREFIX + id, JSON.stringify(quote));
+      const q = await withQuoteNumber();
+      await storage.set(SAVED_PREFIX + id, JSON.stringify(q));
       const entry = {
         id,
         name,
@@ -3218,7 +3280,7 @@ function QuoteGenerator() {
     setDownloading(true);
     showToast("Building PDF…");
     try {
-      await generatePDF(quote, totals, brandName, liveCatalog);
+      await generatePDF(await withQuoteNumber(), totals, brandName, liveCatalog);
       showToast("PDF downloaded");
     } catch (e) {
       console.error(e);
@@ -3232,7 +3294,7 @@ function QuoteGenerator() {
     setDownloading(true);
     showToast("Preparing PDF…");
     try {
-      const result = await sharePDF(quote, totals, brandName, liveCatalog);
+      const result = await sharePDF(await withQuoteNumber(), totals, brandName, liveCatalog);
       showToast(result === "shared" ? "Shared" : "Downloaded");
     } catch (e) {
       if (e.name !== "AbortError") {
@@ -3245,16 +3307,20 @@ function QuoteGenerator() {
   };
   const openSettings = () => {
     setBrandInput(brandName);
+    setPrefixInput(quoteNumberPrefix);
     setShowSettingsDialog(true);
   };
   const saveSettings = async () => {
     const name = (brandInput || "").trim() || DEFAULT_BRAND;
     setBrandName(name);
+    const prefix = (prefixInput || "").trim() || DEFAULT_QUOTE_PREFIX;
+    setQuoteNumberPrefix(prefix);
     try {
       await storage.set(BRAND_KEY, name);
+      await storage.set(QUOTE_PREFIX_KEY, prefix);
     } catch (e) {}
     setShowSettingsDialog(false);
-    showToast("Brand updated");
+    showToast("Settings updated");
   };
   const saveCatalog = async newOverrides => {
     setCatalogOverrides(newOverrides);
@@ -3421,9 +3487,17 @@ function QuoteGenerator() {
     className: "bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden"
   }, /*#__PURE__*/React.createElement("div", {
     className: "px-5 py-3 border-b border-slate-100 flex items-center justify-between"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-baseline gap-2"
   }, /*#__PURE__*/React.createElement("h2", {
     className: "text-xs uppercase tracking-[0.18em] text-slate-500 font-semibold"
-  }, "Job Details"), /*#__PURE__*/React.createElement("button", {
+  }, "Job Details"), /*#__PURE__*/React.createElement("span", {
+    className: "text-[11px] text-slate-400 tabular-nums",
+    style: {
+      fontFamily: "'JetBrains Mono', monospace"
+    },
+    title: "Quote number — allocated when you first save or export"
+  }, quote.quoteNumber || "—")), /*#__PURE__*/React.createElement("button", {
     onClick: newQuote,
     className: "text-xs text-slate-500 hover:text-slate-900 flex items-center gap-1"
   }, /*#__PURE__*/React.createElement(RotateIcon, {
@@ -3963,7 +4037,17 @@ function QuoteGenerator() {
     onKeyDown: e => e.key === "Enter" && saveSettings()
   }), /*#__PURE__*/React.createElement("p", {
     className: "text-xs text-slate-500 mt-2"
-  }, "Appears in the header, on the PDF export, and in the file name. Saved on this device.")), /*#__PURE__*/React.createElement("div", {
+  }, "Appears in the header, on the PDF export, and in the file name. Saved on this device.")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] uppercase tracking-[0.18em] text-slate-500 font-semibold mb-1.5"
+  }, "Quote number prefix"), /*#__PURE__*/React.createElement("input", {
+    value: prefixInput,
+    onChange: e => setPrefixInput(e.target.value),
+    placeholder: DEFAULT_QUOTE_PREFIX,
+    className: "w-full px-3 py-3 bg-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400",
+    onKeyDown: e => e.key === "Enter" && saveSettings()
+  }), /*#__PURE__*/React.createElement("p", {
+    className: "text-xs text-slate-500 mt-2"
+  }, "Quotes are numbered ", `${(prefixInput || "").trim() || DEFAULT_QUOTE_PREFIX}-${new Date().getFullYear()}-001`, ". The count restarts each year and is kept on this device only — it doesn't sync.")), /*#__PURE__*/React.createElement("div", {
     className: "border-t border-slate-100 pt-5"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
