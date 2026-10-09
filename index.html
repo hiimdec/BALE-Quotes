@@ -791,8 +791,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 <body>
   <div id="root"></div>
 
-  <!-- Failsafe: if the app fails to mount (e.g. a CDN library breaks again), show a readable
-       message instead of a silent white screen. Plain JS so it works even if Babel never runs. -->
+  <!-- Failsafe: if the app fails to mount (e.g. a broken update), show a readable message
+       instead of a silent white screen. Plain JS, separate from the app script, so it still
+       runs when the app script itself throws. -->
   <script>
     (function () {
       var firstError = null;
@@ -809,8 +810,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         root.innerHTML =
           '<div style="max-width:560px;margin:48px auto;padding:24px;font-family:Manrope,system-ui,sans-serif;color:#0f172a">' +
             '<div style="font-weight:700;font-size:18px;margin-bottom:8px">This app didn\u2019t load</div>' +
-            '<div style="color:#475569;line-height:1.5;font-size:14px">It looks like one of the libraries it depends on failed to load. ' +
-            'Check your internet connection and reload. If it keeps happening, a hosted library may have changed.</div>' +
+            '<div style="color:#475569;line-height:1.5;font-size:14px">The app hit an error while starting. Close it fully and reopen. ' +
+            'If it keeps happening, the latest update may be broken.</div>' +
             (firstError
               ? '<pre style="margin-top:16px;padding:12px;background:#f1f5f9;border-radius:8px;font-size:12px;white-space:pre-wrap;color:#334155">' +
                 firstError.replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }) +
@@ -1660,6 +1661,9 @@ const emptyQuote = (catalog, defaultsOn = true) => ({
   // useState initialiser and storage is async, so allocating here would burn a
   // number on every draft that's started and abandoned.
   quoteNumber: null,
+  // Id of the saved quote this draft was loaded from (or last saved as), so Save
+  // can update it in place. Lives on the quote so it survives the draft autosave.
+  savedId: null,
   jobDate: todayStr(),
   dateStart: "",
   dateEnd: "",
@@ -3600,13 +3604,28 @@ function QuoteGenerator() {
     };
   };
 
+  /* The saved-list entry this draft is linked to, if it still exists. */
+  const linkedEntry = useMemo(() => quote.savedId ? savedList.find(s => s.id === quote.savedId) || null : null, [quote.savedId, savedList]);
+
+  /* A loaded quote brings its own discount state — don't leave the previous
+     quote's target input or mode on screen. */
+  const resetDiscountUi = q => {
+    setTargetTotalInput("");
+    setDiscountEditMode(q.targetTotalOverride !== null && q.targetTotalOverride !== undefined ? "target" : "percent");
+  };
+
   /* Save / load / duplicate */
-  const saveQuote = async () => {
+  const saveQuote = async (asNew = false) => {
     const name = (saveName || quote.jobName || "Untitled").trim();
     if (!name) return;
-    const id = `${slug(name)}-${Date.now().toString(36)}`;
+    // Update the linked quote in place unless asked for a new copy.
+    const overwrite = !asNew && !!linkedEntry;
+    const id = overwrite ? linkedEntry.id : `${slug(name)}-${Date.now().toString(36)}`;
     try {
-      const q = await withQuoteNumber();
+      const q = {
+        ...(await withQuoteNumber()),
+        savedId: id
+      };
       await storage.set(SAVED_PREFIX + id, JSON.stringify(q));
       const entry = {
         id,
@@ -3614,13 +3633,17 @@ function QuoteGenerator() {
         date: new Date().toISOString(),
         total: totals.grandTotal
       };
-      const next = [entry, ...savedList].slice(0, 100);
+      // Newest first. An update moves its entry to the top rather than adding one.
+      const next = [entry, ...savedList.filter(s => s.id !== id)];
       await storage.set(SAVED_INDEX_KEY, JSON.stringify(next));
       setSavedList(next);
+      update({
+        savedId: id
+      });
       await pushRecent(id);
       setShowSaveDialog(false);
       setSaveName("");
-      showToast(`Saved "${name}"`);
+      showToast(overwrite ? `Updated "${name}"` : `Saved "${name}"`);
     } catch (e) {
       showToast("Save failed");
     }
@@ -3629,7 +3652,12 @@ function QuoteGenerator() {
     try {
       const r = await storage.get(SAVED_PREFIX + id);
       if (r && r.value) {
-        setQuote(mergeSaved(liveCatalog, JSON.parse(r.value)));
+        const loaded = mergeSaved(liveCatalog, {
+          ...JSON.parse(r.value),
+          savedId: id
+        });
+        setQuote(loaded);
+        resetDiscountUi(loaded);
         setShowLoadDialog(false);
         await pushRecent(id);
         showToast("Loaded");
@@ -3643,25 +3671,34 @@ function QuoteGenerator() {
       const r = await storage.get(SAVED_PREFIX + id);
       if (!r || !r.value) return;
       const original = JSON.parse(r.value);
+      const source = savedList.find(s => s.id === id);
       const dupName = `${original.jobName || "Quote"} (copy)`;
+      const newId = `${slug(dupName)}-${Date.now().toString(36)}`;
+      // The copy is a quote in its own right: it gets its own number on first
+      // save/export, and its savedId points at itself (stored too, not just in
+      // state) so saving it updates the copy rather than adding another.
       const dupQuote = {
         ...original,
         jobName: dupName,
-        jobDate: todayStr()
+        jobDate: todayStr(),
+        quoteNumber: null,
+        savedId: newId
       };
-      const newId = `${slug(dupName)}-${Date.now().toString(36)}`;
       await storage.set(SAVED_PREFIX + newId, JSON.stringify(dupQuote));
       const entry = {
         id: newId,
         name: dupName,
         date: new Date().toISOString(),
-        total: original.total || 0
+        // The stored quote has no total; the index entry we copied from does.
+        total: source ? source.total : 0
       };
-      const next = [entry, ...savedList].slice(0, 100);
+      const next = [entry, ...savedList];
       await storage.set(SAVED_INDEX_KEY, JSON.stringify(next));
       setSavedList(next);
       // Open the duplicate immediately
-      setQuote(mergeSaved(liveCatalog, dupQuote));
+      const opened = mergeSaved(liveCatalog, dupQuote);
+      setQuote(opened);
+      resetDiscountUi(opened);
       await pushRecent(newId);
       setShowLoadDialog(false);
       showToast(`Duplicated as "${dupName}"`);
@@ -3681,6 +3718,11 @@ function QuoteGenerator() {
           const next = savedList.filter(s => s.id !== id);
           await storage.set(SAVED_INDEX_KEY, JSON.stringify(next));
           setSavedList(next);
+          // Deleting the quote that's open leaves the draft unlinked.
+          setQuote(q => q.savedId === id ? {
+            ...q,
+            savedId: null
+          } : q);
           const nextRecent = recentIds.filter(x => x !== id);
           setRecentIds(nextRecent);
           try {
@@ -3694,8 +3736,13 @@ function QuoteGenerator() {
 
   /* New quote — confirm if there's content */
   const newQuote = () => {
-    const hasContent = quote.jobName || Object.values(quote.items).some(it => Number(it.qty) > 0 && !it.custom ? false : Number(it.qty) > 0);
-    const dirty = quote.jobName || quote.productionCompany || quote.producer || Object.values(quote.items).some(it => it.custom);
+    // What a fresh quote would hold for this item (mirrors buildItems).
+    const freshQty = it => {
+      if (!quote.defaultsOn) return 0;
+      const cat = liveCatalog[it.section]?.items.find(c => c.name === it.name);
+      return Number(cat && cat.default) || 0;
+    };
+    const dirty = quote.jobName || quote.productionCompany || quote.producer || Object.values(quote.items).some(it => it.custom || Number(it.qty) !== freshQty(it));
     if (dirty) {
       setConfirm({
         title: "Start a new quote?",
@@ -3729,7 +3776,7 @@ function QuoteGenerator() {
       showToast("PDF downloaded");
     } catch (e) {
       console.error(e);
-      showToast("PDF failed — check your connection");
+      showToast("PDF failed — try again");
     } finally {
       setDownloading(false);
     }
@@ -3837,8 +3884,13 @@ function QuoteGenerator() {
     const lookup = new Map(savedList.map(s => [s.id, s]));
     return recentIds.map(id => lookup.get(id)).filter(Boolean).slice(0, 3);
   }, [savedList, recentIds]);
+  // Rendered in both modes: the PDF/share buttons only exist in preview, so their
+  // toasts ("Building PDF…", "PDF failed — try again") must show there too.
+  const toastEl = toast && /*#__PURE__*/React.createElement("div", {
+    className: "fixed top-20 left-1/2 -translate-x-1/2 bg-slate-900 text-blue-300 px-4 py-2 rounded-full text-sm font-medium shadow-xl z-50 toast-pos"
+  }, toast);
   if (mode === "preview") {
-    return /*#__PURE__*/React.createElement(PreviewView, {
+    return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(PreviewView, {
       quote: quote,
       totals: totals,
       brandName: brandName,
@@ -3847,7 +3899,7 @@ function QuoteGenerator() {
       onDownload: handleDownloadPDF,
       onShare: handleSharePDF,
       downloading: downloading
-    });
+    }), toastEl);
   }
   const overrideActive = quote.targetTotalOverride !== null && quote.targetTotalOverride !== undefined;
   return /*#__PURE__*/React.createElement("div", {
@@ -3893,7 +3945,7 @@ function QuoteGenerator() {
     className: "hidden sm:inline"
   }, "Open")), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
-      setSaveName(quote.jobName || "");
+      setSaveName(linkedEntry ? linkedEntry.name : quote.jobName || "");
       setShowSaveDialog(true);
     },
     "aria-label": "Save quote",
@@ -4422,14 +4474,20 @@ function QuoteGenerator() {
     onChange: e => setSaveName(e.target.value),
     placeholder: "Quote name",
     className: "w-full px-3 py-3 bg-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400",
-    onKeyDown: e => e.key === "Enter" && saveQuote()
+    onKeyDown: e => e.key === "Enter" && saveQuote(false)
   }), /*#__PURE__*/React.createElement("div", {
-    className: "flex justify-end gap-2 mt-4"
+    className: "flex flex-wrap justify-end gap-2 mt-4"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowSaveDialog(false),
     className: "px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100"
-  }, "Cancel"), /*#__PURE__*/React.createElement("button", {
-    onClick: saveQuote,
+  }, "Cancel"), linkedEntry ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("button", {
+    onClick: () => saveQuote(true),
+    className: "px-4 py-2 rounded-lg text-slate-900 font-semibold bg-slate-100 hover:bg-slate-200"
+  }, "Save as new"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => saveQuote(false),
+    className: "px-4 py-2 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800 truncate max-w-[180px]"
+  }, "Update “", linkedEntry.name, "”")) : /*#__PURE__*/React.createElement("button", {
+    onClick: () => saveQuote(false),
     className: "px-4 py-2 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800"
   }, "Save"))), showLoadDialog && /*#__PURE__*/React.createElement(Modal, {
     onClose: () => setShowLoadDialog(false),
@@ -4558,9 +4616,7 @@ function QuoteGenerator() {
     danger: confirm.danger,
     onConfirm: confirm.onConfirm,
     onCancel: () => setConfirm(null)
-  }), toast && /*#__PURE__*/React.createElement("div", {
-    className: "fixed top-20 left-1/2 -translate-x-1/2 bg-slate-900 text-blue-300 px-4 py-2 rounded-full text-sm font-medium shadow-xl z-50 toast-pos"
-  }, toast));
+  }), toastEl);
 }
 ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(QuoteGenerator, null));
   </script>

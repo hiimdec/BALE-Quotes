@@ -85,7 +85,9 @@ async function handleNavigate(request, event) {
   // can't clone a response once its body is being consumed.
   const cachedForDiff = cached ? cached.clone() : null;
 
-  const network = fetch(request)
+  // no-cache: revalidate with the server rather than taking GitHub Pages'
+  // max-age=600 copy from the HTTP cache, which could be ten minutes stale.
+  const network = fetch(INDEX_URL, { cache: "no-cache" })
     .then(async response => {
       if (response && response.ok) {
         await cache.put(INDEX_URL, response.clone());
