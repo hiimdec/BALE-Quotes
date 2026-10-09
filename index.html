@@ -763,6 +763,13 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       .hdr-btn { min-width: 44px; min-height: 44px; }
       .hdr-actions { flex-shrink: 0; }
       .nav-chip { min-height: 36px; }
+      /* Right-edge fade into the header colour so the chip strip reads as scrollable;
+         bottom: 8px matches the strip's pb-2, so it covers just the chips. */
+      .chip-fade {
+        position: absolute; top: 0; right: 0; bottom: 8px; width: 40px; pointer-events: none;
+        background: linear-gradient(to right, rgba(15, 23, 42, 0), #0f172a); transition: opacity 0.15s;
+      }
+      .chip-fade-off { opacity: 0; }
       .main-pad { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
       /* Tighter page: ~16px from the screen edge to a field's edge (8px gutter + 8px
          card padding), 12px between cards, 16px inside sheets, 4px label-to-field. */
@@ -3927,6 +3934,19 @@ function QuoteGenerator() {
     Object.values(sectionRefs.current).forEach(el => el && observer.observe(el));
     return () => observer.disconnect();
   }, [mode, liveCatalog]);
+
+  /* Phone chip strip: show the right-edge fade only while there's more to scroll. */
+  const chipStripRef = useRef(null);
+  const [chipFade, setChipFade] = useState(false);
+  const updateChipFade = () => {
+    const el = chipStripRef.current;
+    if (el) setChipFade(el.scrollWidth - el.clientWidth - el.scrollLeft > 4);
+  };
+  useEffect(updateChipFade); // chip widths change with the item counts
+  useEffect(() => {
+    window.addEventListener("resize", updateChipFade);
+    return () => window.removeEventListener("resize", updateChipFade);
+  }, []);
   const scrollToSection = secKey => {
     const el = sectionRefs.current[secKey];
     if (!el) return;
@@ -4067,6 +4087,23 @@ function QuoteGenerator() {
   }, /*#__PURE__*/React.createElement(PlusIcon, {
     size: 16
   }))))];
+  // Section chips: bare on iPad; on phones wrapped with a right-edge fade that hints
+  // the strip scrolls.
+  const chipStrip = /*#__PURE__*/React.createElement("div", {
+    className: "max-w-6xl mx-auto px-4 pb-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar",
+    ref: chipStripRef,
+    onScroll: updateChipFade
+  }, Object.entries(liveCatalog).map(([secKey, sec]) => {
+    const picked = sectionPicked(secKey);
+    const isActive = activeSection === secKey;
+    return /*#__PURE__*/React.createElement("button", {
+      key: secKey,
+      onClick: () => scrollToSection(secKey),
+      className: `shrink-0 px-2.5 py-1 rounded-md text-xs font-medium transition whitespace-nowrap nav-chip ${isActive ? "bg-blue-500 text-white" : "bg-slate-800 hover:bg-slate-700 text-slate-300"}`
+    }, sec.label, picked > 0 && /*#__PURE__*/React.createElement("span", {
+      className: "ml-1.5 tabular-nums opacity-70"
+    }, picked));
+  }));
   const [applyDaysButton, defaultKitRow] = [/*#__PURE__*/React.createElement("button", {
     onClick: applyGlobalDays,
     className: "w-full sm:w-auto px-4 py-2.5 bg-slate-900 text-white rounded-lg text-sm font-semibold hover:bg-slate-800 transition flex items-center gap-2 justify-center"
@@ -4146,19 +4183,12 @@ function QuoteGenerator() {
     key: s.id,
     onClick: () => loadSaved(s.id),
     className: "shrink-0 px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 truncate max-w-[180px]"
-  }, s.name))), /*#__PURE__*/React.createElement("div", {
-    className: "max-w-6xl mx-auto px-4 pb-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar"
-  }, Object.entries(liveCatalog).map(([secKey, sec]) => {
-    const picked = sectionPicked(secKey);
-    const isActive = activeSection === secKey;
-    return /*#__PURE__*/React.createElement("button", {
-      key: secKey,
-      onClick: () => scrollToSection(secKey),
-      className: `shrink-0 px-2.5 py-1 rounded-md text-xs font-medium transition whitespace-nowrap nav-chip ${isActive ? "bg-blue-500 text-white" : "bg-slate-800 hover:bg-slate-700 text-slate-300"}`
-    }, sec.label, picked > 0 && /*#__PURE__*/React.createElement("span", {
-      className: "ml-1.5 tabular-nums opacity-70"
-    }, picked));
-  }))), /*#__PURE__*/React.createElement("main", {
+  }, s.name))), isPhone ? /*#__PURE__*/React.createElement("div", {
+    className: "relative"
+  }, chipStrip, /*#__PURE__*/React.createElement("div", {
+    className: `chip-fade${chipFade ? "" : " chip-fade-off"}`,
+    "aria-hidden": true
+  })) : chipStrip), /*#__PURE__*/React.createElement("main", {
     className: "max-w-6xl mx-auto px-4 pb-56 pt-6 space-y-6 main-pad"
   }, isPhone && /*#__PURE__*/React.createElement(PhoneJobSummary, {
     quote: quote,
