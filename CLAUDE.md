@@ -2,10 +2,11 @@
 
 ## What this is
 
-A single-page quote generator for film lighting kit hire. Used on an iPad, installed to
-the home screen from GitHub Pages. **`index.html` is the entire application** — React,
-Tailwind, jsPDF and fonts all load from CDNs. There is no build step, no `npm install`,
-no bundler, no framework scaffolding.
+A single-page quote generator for film lighting kit hire. Used on an iPhone (the iPad is
+still supported), installed to the home screen from GitHub Pages. **`index.html` is the
+entire application** — React, Tailwind and jsPDF are inlined into it; the only external
+request is the Google Fonts stylesheet. There is no build step, no `npm install`, no
+bundler, no framework scaffolding.
 
 ## Hard rules
 
@@ -67,4 +68,9 @@ a syntax error in `index.html` is a white screen on set, with no console to chec
 2. Prefer the smallest possible diff. This file is ~4,000 lines; don't reformat it.
 3. After any edit, sanity-check the script parses (e.g. `node --check` won't work on
    HTML — extract the script block or open the file in a browser and check the console).
-4. Commit messages: short, imperative, lowercase. e.g. `add caligri air tube to modifiers`.
+4. Check layout changes at **390px** (iPhone) and **1024px** (iPad). Phone-only layout lives
+   behind `useIsPhone()` and the phone media query in the app's own `<style>` block; the
+   iPad layout (≥640px, Tailwind's `sm:`) must not change. The inlined Tailwind build only
+   contains classes that were already in use, so write a small named rule in `<style>`
+   rather than a Tailwind utility that won't exist.
+5. Commit messages: short, imperative, lowercase. e.g. `add caligri air tube to modifiers`.
