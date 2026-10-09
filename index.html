@@ -3900,24 +3900,35 @@ function QuoteGenerator() {
     }), toastEl);
   }
   const overrideActive = quote.targetTotalOverride !== null && quote.targetTotalOverride !== undefined;
+  // Header pieces placed differently on phones (gear last, bulb decorative) and iPad.
+  const bulb = /*#__PURE__*/React.createElement("div", {
+    className: "w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0"
+  }, /*#__PURE__*/React.createElement(BulbIcon, {
+    size: 20,
+    className: "text-slate-50"
+  }));
+  const settingsButton = /*#__PURE__*/React.createElement("button", {
+    onClick: openSettings,
+    title: "Settings",
+    "aria-label": "Settings",
+    className: "h-10 w-10 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition hdr-btn"
+  }, /*#__PURE__*/React.createElement(SettingsIcon, {
+    size: 16
+  }));
   return /*#__PURE__*/React.createElement("div", {
     className: "min-h-screen bg-slate-50 text-slate-900"
   }, /*#__PURE__*/React.createElement("header", {
     className: "sticky top-0 z-30 bg-slate-900 text-slate-50 safe-top"
   }, /*#__PURE__*/React.createElement("div", {
     className: "max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3"
-  }, /*#__PURE__*/React.createElement("button", {
+  }, isPhone ?
+  // Phones: the bulb is decorative, and the gear is the way into Settings.
+  /*#__PURE__*/React.cloneElement(bulb, {
+    "aria-hidden": true
+  }) : /*#__PURE__*/React.createElement("button", {
     onClick: openSettings,
-    // Phones show only the bulb (the brand text truncated to nothing useful), so
-    // the button needs its own name there; iPad keeps the visible brand text.
-    "aria-label": isPhone ? "Settings" : undefined,
-    className: "flex items-center gap-3 hover:opacity-80 transition text-left min-w-0 tap-44"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0"
-  }, /*#__PURE__*/React.createElement(BulbIcon, {
-    size: 20,
-    className: "text-slate-50"
-  })), !isPhone && /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3 hover:opacity-80 transition text-left min-w-0"
+  }, bulb, /*#__PURE__*/React.createElement("div", {
     className: "leading-tight min-w-0"
   }, /*#__PURE__*/React.createElement("div", {
     className: "text-[10px] uppercase tracking-[0.18em] text-blue-300 font-semibold truncate"
@@ -3929,22 +3940,13 @@ function QuoteGenerator() {
     }
   }, "Quote Builder"))), /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2 hdr-actions"
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: openSettings,
-    title: "Settings",
-    "aria-label": "Settings",
-    className: "h-10 w-10 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition hdr-btn"
-  }, /*#__PURE__*/React.createElement(SettingsIcon, {
-    size: 16
-  })), /*#__PURE__*/React.createElement("button", {
+  }, !isPhone && settingsButton, /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowLoadDialog(true),
     "aria-label": "Open saved quotes",
     className: "h-10 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-medium flex items-center gap-2 transition hdr-btn"
   }, /*#__PURE__*/React.createElement(FolderIcon, {
     size: 16
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "hidden sm:inline"
-  }, "Open")), /*#__PURE__*/React.createElement("button", {
+  }), /*#__PURE__*/React.createElement("span", null, "Open")), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       setSaveName(linkedEntry ? linkedEntry.name : quote.jobName || "");
       setShowSaveDialog(true);
@@ -3953,9 +3955,9 @@ function QuoteGenerator() {
     className: "h-10 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-medium flex items-center gap-2 transition hdr-btn"
   }, /*#__PURE__*/React.createElement(SaveIcon, {
     size: 16
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "hidden sm:inline"
-  }, "Save")), /*#__PURE__*/React.createElement("button", {
+  }), /*#__PURE__*/React.createElement("span", null, "Save")), isPhone && settingsButton,
+  // Phones get Preview from the slim bottom bar instead.
+  !isPhone && /*#__PURE__*/React.createElement("button", {
     onClick: () => setMode("preview"),
     className: "h-10 px-4 rounded-lg bg-blue-500 text-white hover:bg-blue-400 text-sm font-semibold flex items-center gap-2 transition hdr-btn"
   }, /*#__PURE__*/React.createElement(EyeIcon, {
