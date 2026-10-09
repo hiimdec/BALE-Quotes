@@ -752,6 +752,26 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     }
     .guard-rail-warn { background: rgba(245, 158, 11, 0.14); color: #fcd34d; }
     .guard-rail-crit { background: rgba(239, 68, 68, 0.16); color: #fca5a5; }
+    /* Phone layout — below Tailwind's sm breakpoint, the same query as useIsPhone().
+       Everything is scoped here so the iPad (>= 640px) layout is untouched. */
+    @media (max-width: 639.98px) {
+      .hdr-btn { min-width: 44px; min-height: 44px; }
+      .hdr-actions { flex-shrink: 0; }
+      .hdr-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .nav-chip { min-height: 36px; }
+      .main-pad { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+      .clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+      .phone-stepper > button { width: 44px; height: 44px; }
+      .phone-stepper > input { width: 40px; height: 44px; padding: 0; }
+      .phone-meta { min-height: 44px; }
+      .tap-44 { min-width: 44px; min-height: 44px; }
+      .guard-icon-warn { color: #fcd34d; }
+      .guard-icon-crit { color: #fca5a5; }
+      .flip-y { transform: rotate(180deg); }
+      .totals-sheet { border-radius: 16px 16px 0 0; max-height: 85dvh; overflow-y: auto; }
+      .sheet-handle { display: flex; align-items: center; justify-content: center; width: 100%; height: 28px; margin: -10px 0 6px; }
+      .sheet-handle::before { content: ""; width: 40px; height: 5px; border-radius: 3px; background: #475569; }
+    }
   </style>
 </head>
 <body>
@@ -2241,6 +2261,280 @@ function ServiceRow({
     }
   }, money(line)));
 }
+
+/* ─────────── Phone layout ───────────
+   Below Tailwind's sm breakpoint (640px). Phones render the components below
+   instead of ItemRow / ServiceRow / the full totals bar; iPad and up keep the
+   originals untouched. The matching CSS lives in the same media query in <style>. */
+const PHONE_QUERY = "(max-width: 639.98px)";
+function useIsPhone() {
+  const [isPhone, setIsPhone] = useState(() => window.matchMedia(PHONE_QUERY).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(PHONE_QUERY);
+    const onChange = () => setIsPhone(mq.matches);
+    if (mq.addEventListener) mq.addEventListener("change", onChange);else mq.addListener(onChange);
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener("change", onChange);else mq.removeListener(onChange);
+    };
+  }, []);
+  return isPhone;
+}
+
+/* Tap-to-edit state for a row's price/days line. Collapses when focus leaves the
+   editor (a tap elsewhere) or on Return. */
+function useInlineEditor() {
+  const [editing, setEditing] = useState(false);
+  const firstInput = useRef(null);
+  useEffect(() => {
+    if (editing && firstInput.current) firstInput.current.focus();
+  }, [editing]);
+  const editorProps = {
+    onBlur: e => {
+      if (!e.currentTarget.contains(e.relatedTarget)) setEditing(false);
+    },
+    onKeyDown: e => {
+      if (e.key === "Enter") e.target.blur();
+    }
+  };
+  return {
+    editing,
+    open: () => setEditing(true),
+    firstInput,
+    editorProps
+  };
+}
+
+/* 44px stepper: 44 + 40 + 44. */
+function PhoneStepper({
+  value,
+  onChange,
+  label
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "phone-stepper flex items-center bg-slate-100 rounded-lg overflow-hidden shrink-0"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => onChange(Math.max(0, Number(value) - 1)),
+    "aria-label": `Decrease ${label}`,
+    className: "flex items-center justify-center active:bg-slate-300"
+  }, /*#__PURE__*/React.createElement(MinusIcon, {
+    size: 18
+  })), /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    min: "0",
+    step: "1",
+    value: value,
+    "aria-label": label,
+    onChange: e => onChange(Math.max(0, parseInt(e.target.value) || 0)),
+    className: "text-center bg-transparent tabular-nums font-semibold text-sm focus:outline-none",
+    style: {
+      fontFamily: "'JetBrains Mono', monospace"
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: () => onChange(Number(value) + 1),
+    "aria-label": `Increase ${label}`,
+    className: "flex items-center justify-center active:bg-slate-300"
+  }, /*#__PURE__*/React.createElement(PlusIcon, {
+    size: 18
+  })));
+}
+const monoStyle = {
+  fontFamily: "'JetBrains Mono', monospace"
+};
+const phoneInputCls = "px-2 py-1.5 bg-slate-50 rounded tabular-nums text-sm focus:outline-none focus:ring-2 focus:ring-blue-400";
+
+/* Name + line total on top; "£180.00 × 2 days ✎" (tap to edit) + qty stepper below.
+   Unpicked rows (qty 0) are dimmed so picked kit stands out when scrolling. */
+function PhoneItemRow({
+  item,
+  onChange,
+  onDelete,
+  highlight
+}) {
+  const ed = useInlineEditor();
+  const line = Number(item.price) * Number(item.days) * Number(item.qty);
+  const idle = !(Number(item.qty) > 0);
+  const days = Number(item.days);
+  return /*#__PURE__*/React.createElement("div", {
+    className: `px-4 py-3 ${highlight ? "bg-blue-50/60" : ""}`
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-start justify-between gap-3"
+  }, item.custom ? /*#__PURE__*/React.createElement("input", {
+    value: item.name,
+    onChange: e => onChange({
+      name: e.target.value
+    }),
+    "aria-label": "Item name",
+    className: `flex-1 min-w-0 text-sm font-medium bg-transparent focus:outline-none focus:bg-slate-100 rounded px-2 py-1.5 -mx-2 ${idle ? "text-slate-400" : ""}`
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: `flex-1 min-w-0 text-sm font-medium clamp-2 ${idle ? "text-slate-400" : ""}`
+  }, item.name), /*#__PURE__*/React.createElement("div", {
+    className: "text-right tabular-nums text-sm font-semibold shrink-0",
+    style: monoStyle
+  }, line > 0 ? money(line) : /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-300"
+  }, "—")), onDelete && /*#__PURE__*/React.createElement("button", {
+    onClick: onDelete,
+    "aria-label": "Delete item",
+    className: "tap-44 flex items-center justify-center text-slate-400 hover:text-red-600 rounded-lg shrink-0"
+  }, /*#__PURE__*/React.createElement(TrashIcon, {
+    size: 16
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "mt-1 flex items-center justify-between gap-3"
+  }, ed.editing ? /*#__PURE__*/React.createElement("div", _extends({
+    className: "phone-meta flex items-center gap-3 min-w-0"
+  }, ed.editorProps), /*#__PURE__*/React.createElement("label", {
+    className: "flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-400 text-sm"
+  }, "\xA3"), /*#__PURE__*/React.createElement("input", {
+    ref: ed.firstInput,
+    type: "number",
+    min: "0",
+    step: "0.01",
+    value: item.price,
+    onChange: e => onChange({
+      price: parseFloat(e.target.value) || 0
+    }),
+    "aria-label": "Price per day",
+    className: `${phoneInputCls} text-right`,
+    style: {
+      ...monoStyle,
+      width: 84
+    }
+  })), /*#__PURE__*/React.createElement("label", {
+    className: "flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    min: "0",
+    step: "1",
+    value: item.days,
+    onChange: e => onChange({
+      days: parseInt(e.target.value) || 0
+    }),
+    "aria-label": "Days",
+    className: `${phoneInputCls} text-center`,
+    style: {
+      ...monoStyle,
+      width: 52
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-400 text-sm"
+  }, "days"))) : /*#__PURE__*/React.createElement("button", {
+    onClick: ed.open,
+    className: `phone-meta flex items-center gap-1.5 min-w-0 text-sm tabular-nums ${idle ? "text-slate-400" : "text-slate-600"}`,
+    style: monoStyle
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "truncate"
+  }, money(item.price), " \xD7 ", days, " day", days !== 1 ? "s" : ""), /*#__PURE__*/React.createElement(EditIcon, {
+    size: 12,
+    className: "text-slate-400 shrink-0"
+  })), /*#__PURE__*/React.createElement(PhoneStepper, {
+    value: item.qty,
+    onChange: v => onChange({
+      qty: v
+    }),
+    label: "quantity"
+  })));
+}
+
+/* Gaffer / van: same shape as PhoneItemRow, but there's no qty — the stepper is days. */
+function PhoneServiceRow({
+  name,
+  price,
+  days,
+  onPrice,
+  onDays
+}) {
+  const ed = useInlineEditor();
+  const line = Number(price) * Number(days);
+  const idle = !(line > 0);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "px-4 py-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-start justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: `flex-1 min-w-0 text-sm font-medium ${idle ? "text-slate-400" : ""}`
+  }, name), /*#__PURE__*/React.createElement("div", {
+    className: "text-right tabular-nums text-sm font-semibold shrink-0",
+    style: monoStyle
+  }, money(line))), /*#__PURE__*/React.createElement("div", {
+    className: "mt-1 flex items-center justify-between gap-3"
+  }, ed.editing ? /*#__PURE__*/React.createElement("label", _extends({
+    className: "phone-meta flex items-center gap-1 min-w-0"
+  }, ed.editorProps), /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-400 text-sm"
+  }, "\xA3"), /*#__PURE__*/React.createElement("input", {
+    ref: ed.firstInput,
+    type: "number",
+    min: "0",
+    step: "0.01",
+    value: price,
+    onChange: e => onPrice(parseFloat(e.target.value) || 0),
+    "aria-label": `${name} per day`,
+    className: `${phoneInputCls} text-right`,
+    style: {
+      ...monoStyle,
+      width: 84
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-400 text-sm"
+  }, "/day")) : /*#__PURE__*/React.createElement("button", {
+    onClick: ed.open,
+    className: `phone-meta flex items-center gap-1.5 min-w-0 text-sm tabular-nums ${idle ? "text-slate-400" : "text-slate-600"}`,
+    style: monoStyle
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "truncate"
+  }, money(price), "/day"), /*#__PURE__*/React.createElement(EditIcon, {
+    size: 12,
+    className: "text-slate-400 shrink-0"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 shrink-0"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-slate-400"
+  }, "days"), /*#__PURE__*/React.createElement(PhoneStepper, {
+    value: days,
+    onChange: onDays,
+    label: "days"
+  }))));
+}
+
+/* Collapsed totals bar: discount + total on the left (tap to expand into the full
+   controls as a bottom sheet), Preview on the right. Guard-rail state stays visible. */
+function PhoneTotalsBar({
+  totals,
+  overrideActive,
+  onExpand,
+  onPreview
+}) {
+  const level = totals.overrideCritical ? "crit" : totals.overrideWarning ? "warn" : null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "fixed bottom-0 inset-x-0 bg-slate-900 text-slate-50 shadow-2xl z-30 safe-bottom"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "px-4 py-2.5 flex items-center gap-3"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onExpand,
+    "aria-expanded": false,
+    className: "phone-meta flex-1 min-w-0 flex items-center gap-2 text-left"
+  }, level && /*#__PURE__*/React.createElement(AlertIcon, {
+    size: 18,
+    className: `shrink-0 guard-icon-${level}`
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "text-xs text-slate-400 truncate"
+  }, overrideActive ? "Locked \xB7 " : "", totals.displayDiscountPct, "% off \xB7 Total"), /*#__PURE__*/React.createElement("span", {
+    className: "text-lg font-serif text-blue-300 tabular-nums whitespace-nowrap",
+    style: {
+      fontFamily: "'Fraunces', serif"
+    }
+  }, money(totals.grandTotal)), /*#__PURE__*/React.createElement(ChevDownIcon, {
+    size: 16,
+    className: "shrink-0 text-slate-400 flip-y"
+  })), /*#__PURE__*/React.createElement("button", {
+    onClick: onPreview,
+    className: "h-11 px-4 rounded-lg bg-blue-500 text-white font-semibold flex items-center gap-2 shrink-0"
+  }, /*#__PURE__*/React.createElement(EyeIcon, {
+    size: 16
+  }), " Preview")));
+}
 function TotalRow({
   label,
   value,
@@ -2796,6 +3090,8 @@ function QuoteGenerator() {
   const [quote, setQuote] = useState(() => emptyQuote(CATALOG_DEFAULT, true));
   const [brandName, setBrandName] = useState(DEFAULT_BRAND);
   const [quoteNumberPrefix, setQuoteNumberPrefix] = useState(DEFAULT_QUOTE_PREFIX);
+  const isPhone = useIsPhone();
+  const [totalsOpen, setTotalsOpen] = useState(false); // phone: totals bar expanded as a sheet
   const [mode, setMode] = useState("edit");
   const [openSections, setOpenSections] = useState({
     lights: true
@@ -3427,22 +3723,22 @@ function QuoteGenerator() {
   }, /*#__PURE__*/React.createElement("div", {
     className: "text-[10px] uppercase tracking-[0.18em] text-blue-300 font-semibold truncate"
   }, brandName), /*#__PURE__*/React.createElement("div", {
-    className: "text-lg font-serif",
+    className: "text-lg font-serif hdr-title",
     style: {
       fontFamily: "'Fraunces', serif",
       fontWeight: 450
     }
   }, "Quote Builder"))), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-2"
+    className: "flex items-center gap-2 hdr-actions"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: openSettings,
     title: "Settings",
-    className: "h-10 w-10 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition"
+    className: "h-10 w-10 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition hdr-btn"
   }, /*#__PURE__*/React.createElement(SettingsIcon, {
     size: 16
   })), /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowLoadDialog(true),
-    className: "h-10 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-medium flex items-center gap-2 transition"
+    className: "h-10 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-medium flex items-center gap-2 transition hdr-btn"
   }, /*#__PURE__*/React.createElement(FolderIcon, {
     size: 16
   }), /*#__PURE__*/React.createElement("span", {
@@ -3452,17 +3748,17 @@ function QuoteGenerator() {
       setSaveName(quote.jobName || "");
       setShowSaveDialog(true);
     },
-    className: "h-10 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-medium flex items-center gap-2 transition"
+    className: "h-10 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-medium flex items-center gap-2 transition hdr-btn"
   }, /*#__PURE__*/React.createElement(SaveIcon, {
     size: 16
   }), /*#__PURE__*/React.createElement("span", {
     className: "hidden sm:inline"
   }, "Save")), /*#__PURE__*/React.createElement("button", {
     onClick: () => setMode("preview"),
-    className: "h-10 px-4 rounded-lg bg-blue-500 text-white hover:bg-blue-400 text-sm font-semibold flex items-center gap-2 transition"
+    className: "h-10 px-4 rounded-lg bg-blue-500 text-white hover:bg-blue-400 text-sm font-semibold flex items-center gap-2 transition hdr-btn"
   }, /*#__PURE__*/React.createElement(EyeIcon, {
     size: 16
-  }), /*#__PURE__*/React.createElement("span", null, "Preview")))), recentEntries.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("span", null, "Preview")))), !isPhone && recentEntries.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "max-w-6xl mx-auto px-4 pb-3 flex items-center gap-2 overflow-x-auto no-scrollbar"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-[10px] uppercase tracking-[0.18em] text-slate-400 font-semibold shrink-0 flex items-center gap-1"
@@ -3480,12 +3776,12 @@ function QuoteGenerator() {
     return /*#__PURE__*/React.createElement("button", {
       key: secKey,
       onClick: () => scrollToSection(secKey),
-      className: `shrink-0 px-2.5 py-1 rounded-md text-xs font-medium transition whitespace-nowrap ${isActive ? "bg-blue-500 text-white" : "bg-slate-800 hover:bg-slate-700 text-slate-300"}`
+      className: `shrink-0 px-2.5 py-1 rounded-md text-xs font-medium transition whitespace-nowrap nav-chip ${isActive ? "bg-blue-500 text-white" : "bg-slate-800 hover:bg-slate-700 text-slate-300"}`
     }, sec.label, picked > 0 && /*#__PURE__*/React.createElement("span", {
       className: "ml-1.5 tabular-nums opacity-70"
     }, picked));
   }))), /*#__PURE__*/React.createElement("main", {
-    className: "max-w-6xl mx-auto px-4 pb-56 pt-6 space-y-6"
+    className: "max-w-6xl mx-auto px-4 pb-56 pt-6 space-y-6 main-pad"
   }, /*#__PURE__*/React.createElement("section", {
     className: "bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden"
   }, /*#__PURE__*/React.createElement("div", {
@@ -3676,8 +3972,8 @@ function QuoteGenerator() {
         fontFamily: "'JetBrains Mono', monospace"
       }
     }, money(sub)))), isOpen && /*#__PURE__*/React.createElement("div", {
-      className: "border-t border-slate-100"
-    }, visibleItems.map(([id, it]) => /*#__PURE__*/React.createElement(ItemRow, {
+      className: isPhone ? "border-t border-slate-100 divide-y divide-slate-100" : "border-t border-slate-100"
+    }, visibleItems.map(([id, it]) => /*#__PURE__*/React.createElement(isPhone ? PhoneItemRow : ItemRow, {
       key: id,
       id: id,
       item: it,
@@ -3705,7 +4001,7 @@ function QuoteGenerator() {
     className: "text-[9px] uppercase tracking-widest font-bold bg-slate-900 text-blue-300 px-2 py-0.5 rounded"
   }, "No discount")), /*#__PURE__*/React.createElement("div", {
     className: "divide-y divide-slate-100"
-  }, /*#__PURE__*/React.createElement(ServiceRow, {
+  }, /*#__PURE__*/React.createElement(isPhone ? PhoneServiceRow : ServiceRow, {
     name: "Gaffer day rate",
     price: quote.gafferRate,
     days: quote.gafferDays,
@@ -3715,7 +4011,7 @@ function QuoteGenerator() {
     onDays: v => update({
       gafferDays: v
     })
-  }), /*#__PURE__*/React.createElement(ServiceRow, {
+  }), /*#__PURE__*/React.createElement(isPhone ? PhoneServiceRow : ServiceRow, {
     name: "Van day rate",
     price: quote.vanRate,
     days: quote.vanDays,
@@ -3805,11 +4101,23 @@ function QuoteGenerator() {
     onChange: e => update({
       notes: e.target.value
     })
-  })))), /*#__PURE__*/React.createElement("div", {
-    className: "fixed bottom-0 inset-x-0 bg-slate-900 text-slate-50 shadow-2xl z-30 safe-bottom"
+  })))), isPhone && totalsOpen && /*#__PURE__*/React.createElement("div", {
+    className: "fixed inset-0 bg-slate-900/60 z-30",
+    onClick: () => setTotalsOpen(false)
+  }), isPhone && !totalsOpen ? /*#__PURE__*/React.createElement(PhoneTotalsBar, {
+    totals: totals,
+    overrideActive: overrideActive,
+    onExpand: () => setTotalsOpen(true),
+    onPreview: () => setMode("preview")
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: `fixed bottom-0 inset-x-0 bg-slate-900 text-slate-50 shadow-2xl z-30 safe-bottom${isPhone ? " totals-sheet" : ""}`
   }, /*#__PURE__*/React.createElement("div", {
     className: "max-w-6xl mx-auto px-4 py-4"
-  }, (totals.overrideCritical || totals.overrideWarning) && /*#__PURE__*/React.createElement("div", {
+  }, isPhone && /*#__PURE__*/React.createElement("button", {
+    onClick: () => setTotalsOpen(false),
+    "aria-label": "Collapse totals",
+    className: "sheet-handle"
+  }), (totals.overrideCritical || totals.overrideWarning) && /*#__PURE__*/React.createElement("div", {
     className: `guard-rail ${totals.overrideCritical ? "guard-rail-crit" : "guard-rail-warn"}`
   }, /*#__PURE__*/React.createElement(AlertIcon, {
     size: 14,
