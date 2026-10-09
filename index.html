@@ -729,6 +729,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
   <style>
     html, body, #root { height: 100%; }
+    /* Dark canvas, matching the header and theme-color. With black-translucent the
+       app draws under the status bar and iOS fades that area using the page
+       background; a light one showed as a grey-to-dark gradient. Also colours any
+       overscroll. The page itself stays light via body / #root. */
+    html { background: #0f172a; }
     body {
       margin: 0;
       font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -736,6 +741,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       -webkit-tap-highlight-color: transparent;
       -webkit-text-size-adjust: 100%;
     }
+    #root { background: #f8fafc; }
     input, textarea, select { font-size: 16px; }
     .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
     .safe-top { padding-top: env(safe-area-inset-top); }
@@ -766,6 +772,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       /* iOS zooms the page when a focused control is under 16px. Tailwind's text-sm
          (a class) beats a bare element selector, so :root lifts specificity above it. */
       :root input, :root textarea, :root select { font-size: 16px; }
+      /* iOS gives date inputs an intrinsic min-width (ignoring width:100%), so Quote
+         date / Shoot start / Shoot end ran past their cards, and it centres the value.
+         An empty date renders no text, so pin it to a text input's exact height
+         (border-box): py-2.5 (0.625rem x 2) + text-sm's 1.25rem line. */
+      .date-input { display: block; min-width: 0; -webkit-appearance: none; appearance: none; text-align: left; height: 2.5rem; }
+      .date-input::-webkit-date-and-time-value { text-align: left; }
       /* Modal + ConfirmDialog become bottom sheets. --kb is the on-screen keyboard's
          height (set from visualViewport), so the Save dialog's input stays above it. */
       .modal-overlay { align-items: flex-end; padding: 0 0 var(--kb, 0px); }
@@ -2061,7 +2073,7 @@ function Field({
     value: value || "",
     onChange: e => onChange(e.target.value),
     placeholder: placeholder,
-    className: "w-full px-3 py-2.5 bg-slate-50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:bg-white transition"
+    className: `w-full px-3 py-2.5 bg-slate-50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:bg-white transition${type === "date" ? " date-input" : ""}`
   }));
 }
 function Modal({
