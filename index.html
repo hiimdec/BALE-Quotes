@@ -756,7 +756,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     @media (max-width: 639.98px) {
       .hdr-btn { min-width: 44px; min-height: 44px; }
       .hdr-actions { flex-shrink: 0; }
-      .hdr-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .nav-chip { min-height: 36px; }
       .main-pad { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
       .clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -3909,18 +3908,21 @@ function QuoteGenerator() {
     className: "max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: openSettings,
-    className: "flex items-center gap-3 hover:opacity-80 transition text-left min-w-0"
+    // Phones show only the bulb (the brand text truncated to nothing useful), so
+    // the button needs its own name there; iPad keeps the visible brand text.
+    "aria-label": isPhone ? "Settings" : undefined,
+    className: "flex items-center gap-3 hover:opacity-80 transition text-left min-w-0 tap-44"
   }, /*#__PURE__*/React.createElement("div", {
     className: "w-9 h-9 rounded-full bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/30 shrink-0"
   }, /*#__PURE__*/React.createElement(BulbIcon, {
     size: 20,
     className: "text-slate-50"
-  })), /*#__PURE__*/React.createElement("div", {
+  })), !isPhone && /*#__PURE__*/React.createElement("div", {
     className: "leading-tight min-w-0"
   }, /*#__PURE__*/React.createElement("div", {
     className: "text-[10px] uppercase tracking-[0.18em] text-blue-300 font-semibold truncate"
   }, brandName), /*#__PURE__*/React.createElement("div", {
-    className: "text-lg font-serif hdr-title",
+    className: "text-lg font-serif",
     style: {
       fontFamily: "'Fraunces', serif",
       fontWeight: 450
