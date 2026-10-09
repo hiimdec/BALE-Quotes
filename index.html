@@ -764,6 +764,15 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       .hdr-actions { flex-shrink: 0; }
       .nav-chip { min-height: 36px; }
       .main-pad { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+      /* Tighter page: ~16px from the screen edge to a field's edge (8px gutter + 8px
+         card padding), 12px between cards, 16px inside sheets, 4px label-to-field. */
+      .main-pad { padding-top: 12px; padding-left: 8px; padding-right: 8px; }
+      :root .main-pad > :not([hidden]) ~ :not([hidden]) { margin-top: 12px; }
+      .pbody { padding: 8px; }
+      .phead { padding: 12px 8px; }
+      .prow { padding-left: 8px; padding-right: 8px; }
+      .modal-body { padding: 16px; }
+      .field-label { margin-bottom: 4px; }
       .clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
       .phone-stepper > button { width: 44px; height: 44px; }
       .phone-stepper > input { width: 40px; height: 44px; padding: 0; }
@@ -2067,7 +2076,7 @@ function Field({
   return /*#__PURE__*/React.createElement("label", {
     className: "block"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "text-[10px] uppercase tracking-[0.18em] text-slate-500 font-semibold mb-1.5"
+    className: "text-[10px] uppercase tracking-[0.18em] text-slate-500 font-semibold mb-1.5 field-label"
   }, label), /*#__PURE__*/React.createElement("input", {
     type: type,
     value: value || "",
@@ -2102,7 +2111,7 @@ function Modal({
   }, /*#__PURE__*/React.createElement(XIcon, {
     size: 20
   }))), /*#__PURE__*/React.createElement("div", {
-    className: "p-5 overflow-y-auto"
+    className: "p-5 overflow-y-auto modal-body"
   }, children)));
 }
 function ConfirmDialog({
@@ -2425,7 +2434,7 @@ function PhoneItemRow({
   const idle = !(Number(item.qty) > 0);
   const days = Number(item.days);
   return /*#__PURE__*/React.createElement("div", {
-    className: `px-4 py-3 ${highlight ? "bg-blue-50/60" : ""}`
+    className: `px-2 py-3 ${highlight ? "bg-blue-50/60" : ""}`
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-start justify-between gap-3"
   }, item.custom ? /*#__PURE__*/React.createElement("input", {
@@ -2523,7 +2532,7 @@ function PhoneServiceRow({
   const line = Number(price) * Number(days);
   const idle = !(line > 0);
   return /*#__PURE__*/React.createElement("div", {
-    className: "px-4 py-3"
+    className: "px-2 py-3"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-start justify-between gap-3"
   }, /*#__PURE__*/React.createElement("div", {
@@ -2610,6 +2619,55 @@ function PhoneTotalsBar({
   }, /*#__PURE__*/React.createElement(EyeIcon, {
     size: 16
   }), " Preview")));
+}
+/* "9–11 Oct" within a month, "30 Sept–2 Oct" across months, "9 Oct" for one day.
+   Dates are YYYY-MM-DD, parsed as local dates so the day can't shift by time zone. */
+const localDate = s => {
+  const [y, m, d] = String(s).split("-").map(Number);
+  return new Date(y, m - 1, d);
+};
+const shootRangeShort = (start, end) => {
+  if (!start) return "";
+  const dayMonth = dt => dt.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short"
+  });
+  const s = localDate(start);
+  if (!end || end === start) return dayMonth(s);
+  const e = localDate(end);
+  return s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear() ? `${s.getDate()}–${dayMonth(e)}` : `${dayMonth(s)}–${dayMonth(e)}`;
+};
+
+/* Phone: Job details + Schedule collapse into one line at the top of the page, with
+   the quote number underneath; tapping it opens the job sheet. A fresh quote with no
+   job name shows "Add job details" instead. */
+function PhoneJobSummary({
+  quote,
+  onOpen
+}) {
+  const cardCls = "w-full bg-white rounded-2xl shadow-sm border border-slate-200/70 text-left";
+  if (!quote.jobName) return /*#__PURE__*/React.createElement("button", {
+    onClick: onOpen,
+    className: `${cardCls} h-12 flex items-center justify-center gap-2 text-sm font-semibold text-blue-700`
+  }, /*#__PURE__*/React.createElement(PlusIcon, {
+    size: 16
+  }), "Add job details");
+  const days = computeDaysFromRange(quote.dateStart, quote.dateEnd);
+  const line = [quote.jobName, quote.productionCompany, shootRangeShort(quote.dateStart, quote.dateEnd), days && daysLabel(days)].filter(Boolean).join(" \xB7 ");
+  return /*#__PURE__*/React.createElement("button", {
+    onClick: onOpen,
+    className: `${cardCls} px-3 py-2.5 flex items-center gap-3`
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex-1 min-w-0"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-sm font-semibold truncate"
+  }, line), /*#__PURE__*/React.createElement("div", {
+    className: "text-[11px] text-slate-400 tabular-nums",
+    style: monoStyle
+  }, quote.quoteNumber || "No quote number yet")), /*#__PURE__*/React.createElement(EditIcon, {
+    size: 16,
+    className: "text-slate-400 shrink-0"
+  }));
 }
 function TotalRow({
   label,
@@ -3252,6 +3310,7 @@ function QuoteGenerator() {
   const [quoteNumberPrefix, setQuoteNumberPrefix] = useState(DEFAULT_QUOTE_PREFIX);
   const isPhone = useIsPhone();
   const [totalsOpen, setTotalsOpen] = useState(false); // phone: totals bar expanded as a sheet
+  const [jobSheetOpen, setJobSheetOpen] = useState(false); // phone: job details + schedule sheet
   const [mode, setMode] = useState("edit");
   const [openSections, setOpenSections] = useState({
     lights: true
@@ -3296,10 +3355,17 @@ function QuoteGenerator() {
         const r = await storage.get(CATALOG_OVERRIDES_KEY);
         if (r && r.value) setCatalogOverrides(JSON.parse(r.value));
       } catch (e) {}
+      let draftJobName = "";
       try {
         const r = await storage.get(STORAGE_KEY);
-        if (r && r.value) setQuote(mergeSaved(CATALOG_DEFAULT, JSON.parse(r.value)));
+        if (r && r.value) {
+          const draft = JSON.parse(r.value);
+          draftJobName = draft.jobName || "";
+          setQuote(mergeSaved(CATALOG_DEFAULT, draft));
+        }
       } catch (e) {}
+      // Phones: a fresh quote with no job name opens the job sheet straight away.
+      if (!draftJobName && window.matchMedia(PHONE_QUERY).matches) setJobSheetOpen(true);
       try {
         const r = await storage.get(SAVED_INDEX_KEY);
         if (r && r.value) setSavedList(JSON.parse(r.value));
@@ -3766,6 +3832,7 @@ function QuoteGenerator() {
           setItemSearch("");
           setConfirm(null);
           showToast("New quote started");
+          if (isPhone) setJobSheetOpen(true); // fresh quote: straight into job details
         }
       });
     } else {
@@ -3775,6 +3842,7 @@ function QuoteGenerator() {
       setDiscountEditMode("percent");
       setItemSearch("");
       showToast("New quote started");
+      if (isPhone) setJobSheetOpen(true); // fresh quote: straight into job details
     }
   };
   const handleDownloadPDF = async () => {
@@ -3927,6 +3995,100 @@ function QuoteGenerator() {
   }, /*#__PURE__*/React.createElement(SettingsIcon, {
     size: 16
   }));
+  // Job details and schedule controls: two cards on iPad, the job sheet on phones.
+  const jobFields = [/*#__PURE__*/React.createElement(Field, {
+    label: "Job name",
+    value: quote.jobName,
+    onChange: v => update({
+      jobName: v
+    }),
+    placeholder: "Dove Commercial"
+  }), /*#__PURE__*/React.createElement(Field, {
+    label: "Quote date",
+    type: "date",
+    value: quote.jobDate,
+    onChange: v => update({
+      jobDate: v
+    })
+  }), /*#__PURE__*/React.createElement(Field, {
+    label: "Production company",
+    value: quote.productionCompany,
+    onChange: v => update({
+      productionCompany: v
+    }),
+    placeholder: "Merman London"
+  }), /*#__PURE__*/React.createElement(Field, {
+    label: "Producer",
+    value: quote.producer,
+    onChange: v => update({
+      producer: v
+    }),
+    placeholder: "Producer name"
+  })];
+  const [shootStartField, shootEndField, daysBlock] = [/*#__PURE__*/React.createElement(Field, {
+    label: "Shoot start",
+    type: "date",
+    value: quote.dateStart,
+    onChange: v => update({
+      dateStart: v
+    })
+  }), /*#__PURE__*/React.createElement(Field, {
+    label: "Shoot end",
+    type: "date",
+    value: quote.dateEnd,
+    onChange: v => update({
+      dateEnd: v
+    })
+  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] uppercase tracking-[0.18em] text-slate-500 font-semibold mb-1.5 field-label"
+  }, "Days"), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center bg-slate-100 rounded-lg overflow-hidden"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setGlobalDays(d => Math.max(0, Number(d) - 1)),
+    "aria-label": "Decrease days",
+    className: "w-10 h-11 flex items-center justify-center hover:bg-slate-200"
+  }, /*#__PURE__*/React.createElement(MinusIcon, {
+    size: 16
+  })), /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    inputMode: "numeric",
+    onFocus: selectAll,
+    min: "0",
+    value: globalDays,
+    onChange: e => setGlobalDays(Math.max(0, parseInt(e.target.value) || 0)),
+    className: "flex-1 h-11 text-center bg-transparent tabular-nums font-semibold focus:outline-none",
+    style: {
+      fontFamily: "'JetBrains Mono', monospace"
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setGlobalDays(d => Number(d) + 1),
+    "aria-label": "Increase days",
+    className: "w-10 h-11 flex items-center justify-center hover:bg-slate-200"
+  }, /*#__PURE__*/React.createElement(PlusIcon, {
+    size: 16
+  }))))];
+  const [applyDaysButton, defaultKitRow] = [/*#__PURE__*/React.createElement("button", {
+    onClick: applyGlobalDays,
+    className: "w-full sm:w-auto px-4 py-2.5 bg-slate-900 text-white rounded-lg text-sm font-semibold hover:bg-slate-800 transition flex items-center gap-2 justify-center"
+  }, /*#__PURE__*/React.createElement(CheckIcon, {
+    size: 16
+  }), " Apply ", globalDays, " day", globalDays !== 1 ? "s" : "", " to all items"), /*#__PURE__*/React.createElement("div", {
+    className: "border-t border-slate-100 pt-5 flex items-start justify-between gap-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex-1"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "text-sm font-semibold mb-0.5"
+  }, "Default kit"), /*#__PURE__*/React.createElement("div", {
+    className: "text-xs text-slate-500"
+  }, "Pre-loads our standard kit (floppies, c-stands, cardellinis, grid cloth, and so on). Turn off to start from zero.")), /*#__PURE__*/React.createElement("button", {
+    onClick: requestToggleDefaults,
+    role: "switch",
+    "aria-label": "Default kit",
+    "aria-checked": quote.defaultsOn,
+    className: `relative w-14 h-8 rounded-full transition-colors shrink-0 ${quote.defaultsOn ? "bg-blue-500" : "bg-slate-300"}`
+  }, /*#__PURE__*/React.createElement("span", {
+    className: `absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow transition-transform ${quote.defaultsOn ? "translate-x-6" : "translate-x-0"}`
+  })))];
   return /*#__PURE__*/React.createElement("div", {
     className: "min-h-screen bg-slate-50 text-slate-900"
   }, /*#__PURE__*/React.createElement("header", {
@@ -3998,7 +4160,10 @@ function QuoteGenerator() {
     }, picked));
   }))), /*#__PURE__*/React.createElement("main", {
     className: "max-w-6xl mx-auto px-4 pb-56 pt-6 space-y-6 main-pad"
-  }, /*#__PURE__*/React.createElement("section", {
+  }, isPhone && /*#__PURE__*/React.createElement(PhoneJobSummary, {
+    quote: quote,
+    onOpen: () => setJobSheetOpen(true)
+  }), !isPhone && /*#__PURE__*/React.createElement("section", {
     className: "bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden"
   }, /*#__PURE__*/React.createElement("div", {
     className: "px-5 py-3 border-b border-slate-100 flex items-center justify-between"
@@ -4019,35 +4184,7 @@ function QuoteGenerator() {
     size: 12
   }), " New")), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-1 sm:grid-cols-2 gap-4 p-5"
-  }, /*#__PURE__*/React.createElement(Field, {
-    label: "Job name",
-    value: quote.jobName,
-    onChange: v => update({
-      jobName: v
-    }),
-    placeholder: "Dove Commercial"
-  }), /*#__PURE__*/React.createElement(Field, {
-    label: "Quote date",
-    type: "date",
-    value: quote.jobDate,
-    onChange: v => update({
-      jobDate: v
-    })
-  }), /*#__PURE__*/React.createElement(Field, {
-    label: "Production company",
-    value: quote.productionCompany,
-    onChange: v => update({
-      productionCompany: v
-    }),
-    placeholder: "Merman London"
-  }), /*#__PURE__*/React.createElement(Field, {
-    label: "Producer",
-    value: quote.producer,
-    onChange: v => update({
-      producer: v
-    }),
-    placeholder: "Producer name"
-  }))), /*#__PURE__*/React.createElement("section", {
+  }, ...jobFields)), !isPhone && /*#__PURE__*/React.createElement("section", {
     className: "bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden"
   }, /*#__PURE__*/React.createElement("div", {
     className: "px-5 py-3 border-b border-slate-100 flex items-center gap-2"
@@ -4060,72 +4197,10 @@ function QuoteGenerator() {
     className: "p-5 space-y-5"
   }, /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-1 sm:grid-cols-3 gap-3 items-end"
-  }, /*#__PURE__*/React.createElement(Field, {
-    label: "Shoot start",
-    type: "date",
-    value: quote.dateStart,
-    onChange: v => update({
-      dateStart: v
-    })
-  }), /*#__PURE__*/React.createElement(Field, {
-    label: "Shoot end",
-    type: "date",
-    value: quote.dateEnd,
-    onChange: v => update({
-      dateEnd: v
-    })
-  }), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "text-[10px] uppercase tracking-[0.18em] text-slate-500 font-semibold mb-1.5"
-  }, "Days"), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center bg-slate-100 rounded-lg overflow-hidden"
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: () => setGlobalDays(d => Math.max(0, Number(d) - 1)),
-    "aria-label": "Decrease days",
-    className: "w-10 h-11 flex items-center justify-center hover:bg-slate-200"
-  }, /*#__PURE__*/React.createElement(MinusIcon, {
-    size: 16
-  })), /*#__PURE__*/React.createElement("input", {
-    type: "number",
-    inputMode: "numeric",
-    onFocus: selectAll,
-    min: "0",
-    value: globalDays,
-    onChange: e => setGlobalDays(Math.max(0, parseInt(e.target.value) || 0)),
-    className: "flex-1 h-11 text-center bg-transparent tabular-nums font-semibold focus:outline-none",
-    style: {
-      fontFamily: "'JetBrains Mono', monospace"
-    }
-  }), /*#__PURE__*/React.createElement("button", {
-    onClick: () => setGlobalDays(d => Number(d) + 1),
-    "aria-label": "Increase days",
-    className: "w-10 h-11 flex items-center justify-center hover:bg-slate-200"
-  }, /*#__PURE__*/React.createElement(PlusIcon, {
-    size: 16
-  }))))), /*#__PURE__*/React.createElement("button", {
-    onClick: applyGlobalDays,
-    className: "w-full sm:w-auto px-4 py-2.5 bg-slate-900 text-white rounded-lg text-sm font-semibold hover:bg-slate-800 transition flex items-center gap-2 justify-center"
-  }, /*#__PURE__*/React.createElement(CheckIcon, {
-    size: 16
-  }), " Apply ", globalDays, " day", globalDays !== 1 ? "s" : "", " to all items"), /*#__PURE__*/React.createElement("div", {
-    className: "border-t border-slate-100 pt-5 flex items-start justify-between gap-4"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "flex-1"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "text-sm font-semibold mb-0.5"
-  }, "Default kit"), /*#__PURE__*/React.createElement("div", {
-    className: "text-xs text-slate-500"
-  }, "Pre-loads our standard kit (floppies, c-stands, cardellinis, grid cloth, and so on). Turn off to start from zero.")), /*#__PURE__*/React.createElement("button", {
-    onClick: requestToggleDefaults,
-    role: "switch",
-    "aria-label": "Default kit",
-    "aria-checked": quote.defaultsOn,
-    className: `relative w-14 h-8 rounded-full transition-colors shrink-0 ${quote.defaultsOn ? "bg-blue-500" : "bg-slate-300"}`
-  }, /*#__PURE__*/React.createElement("span", {
-    className: `absolute top-1 left-1 w-6 h-6 bg-white rounded-full shadow transition-transform ${quote.defaultsOn ? "translate-x-6" : "translate-x-0"}`
-  }))))), /*#__PURE__*/React.createElement("section", {
+  }, shootStartField, shootEndField, daysBlock), applyDaysButton, defaultKitRow)), /*#__PURE__*/React.createElement("section", {
     className: "bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "p-3"
+    className: "p-3 pbody"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-2.5"
   }, /*#__PURE__*/React.createElement(SearchIcon, {
@@ -4168,7 +4243,7 @@ function QuoteGenerator() {
         [secKey]: !isOpen
       })),
       disabled: searchActive,
-      className: "w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition text-left disabled:cursor-default disabled:hover:bg-transparent"
+      className: "w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition text-left disabled:cursor-default disabled:hover:bg-transparent phead"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center gap-3"
     }, !searchActive && (isOpen ? /*#__PURE__*/React.createElement(ChevDownIcon, {
@@ -4203,7 +4278,7 @@ function QuoteGenerator() {
       onDelete: it.custom ? () => deleteItem(id) : null,
       highlight: searchActive && matchesSearch(it)
     })), !searchActive && /*#__PURE__*/React.createElement("div", {
-      className: "px-4 py-3 border-t border-slate-100"
+      className: "px-4 py-3 border-t border-slate-100 prow"
     }, /*#__PURE__*/React.createElement("button", {
       onClick: () => addCustomItem(secKey),
       className: "text-sm text-blue-700 hover:text-blue-800 font-medium flex items-center gap-1"
@@ -4213,7 +4288,7 @@ function QuoteGenerator() {
   }), /*#__PURE__*/React.createElement("section", {
     className: "bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "px-5 py-4 border-b border-slate-100 flex items-center gap-3"
+    className: "px-5 py-4 border-b border-slate-100 flex items-center gap-3 phead"
   }, /*#__PURE__*/React.createElement("h3", {
     className: "text-lg font-serif",
     style: {
@@ -4244,7 +4319,7 @@ function QuoteGenerator() {
       vanDays: v
     })
   }), /*#__PURE__*/React.createElement("div", {
-    className: "px-4 py-3 grid grid-cols-12 gap-3 items-center"
+    className: "px-4 py-3 grid grid-cols-12 gap-3 items-center prow"
   }, /*#__PURE__*/React.createElement("div", {
     className: "col-span-12 sm:col-span-6"
   }, /*#__PURE__*/React.createElement("input", {
@@ -4279,7 +4354,7 @@ function QuoteGenerator() {
   })))))), /*#__PURE__*/React.createElement("section", {
     className: "bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "px-5 py-4 border-b border-slate-100 flex items-center gap-3"
+    className: "px-5 py-4 border-b border-slate-100 flex items-center gap-3 phead"
   }, /*#__PURE__*/React.createElement("h3", {
     className: "text-lg font-serif",
     style: {
@@ -4288,7 +4363,7 @@ function QuoteGenerator() {
   }, "Consumables Estimate"), /*#__PURE__*/React.createElement("span", {
     className: "text-[9px] uppercase tracking-widest font-bold bg-slate-900 text-blue-300 px-2 py-0.5 rounded"
   }, "No discount")), /*#__PURE__*/React.createElement("div", {
-    className: "p-5"
+    className: "p-5 pbody"
   }, /*#__PURE__*/React.createElement("p", {
     className: "text-sm text-slate-500 mb-3"
   }, "Lump-sum estimate for gels, tape, wrap, and anything not ticked above. Charged as used."), /*#__PURE__*/React.createElement("div", {
@@ -4312,14 +4387,14 @@ function QuoteGenerator() {
   })))), /*#__PURE__*/React.createElement("section", {
     className: "bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "px-5 py-4 border-b border-slate-100"
+    className: "px-5 py-4 border-b border-slate-100 phead"
   }, /*#__PURE__*/React.createElement("h3", {
     className: "text-lg font-serif",
     style: {
       fontFamily: "'Fraunces', serif"
     }
   }, "Notes")), /*#__PURE__*/React.createElement("div", {
-    className: "p-5"
+    className: "p-5 pbody"
   }, /*#__PURE__*/React.createElement("textarea", {
     className: "w-full text-sm bg-slate-50 rounded-lg px-3 py-2 min-h-24 focus:outline-none focus:ring-2 focus:ring-blue-400",
     placeholder: "Any notes for the client \u2014 cross hires, extras on request, etc.",
@@ -4478,7 +4553,24 @@ function QuoteGenerator() {
     className: "h-12 px-5 rounded-lg bg-blue-500 text-white font-semibold flex items-center gap-2 hover:bg-blue-400 transition"
   }, /*#__PURE__*/React.createElement(EyeIcon, {
     size: 16
-  }), " Preview"))))), showSaveDialog && /*#__PURE__*/React.createElement(Modal, {
+  }), " Preview"))))), isPhone && jobSheetOpen && /*#__PURE__*/React.createElement(Modal, {
+    onClose: () => setJobSheetOpen(false),
+    title: "Job details"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "space-y-3"
+  }, ...jobFields, /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-2 gap-2"
+  }, shootStartField, shootEndField), daysBlock, applyDaysButton, defaultKitRow, /*#__PURE__*/React.createElement("div", {
+    className: "flex gap-2 pt-1"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: newQuote,
+    className: "px-4 py-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-900 text-sm font-semibold flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(RotateIcon, {
+    size: 14
+  }), "New quote"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setJobSheetOpen(false),
+    className: "flex-1 px-4 py-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold"
+  }, "Done")))), showSaveDialog && /*#__PURE__*/React.createElement(Modal, {
     onClose: () => setShowSaveDialog(false),
     title: "Save this quote"
   }, /*#__PURE__*/React.createElement("p", {
