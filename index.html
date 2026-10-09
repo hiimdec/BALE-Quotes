@@ -743,6 +743,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     }
     #root { background: #f8fafc; }
     input, textarea, select { font-size: 16px; }
+    /* Placeholders read as hints, not data: clearly paler than entered values
+       (#b0bac7 is ~1.9:1 on the light fields, values ~17:1). On the dark
+       target-total field "paler" means dimmer, so it gets slate-500. */
+    input::placeholder, textarea::placeholder { color: #b0bac7; }
+    .bg-slate-800::placeholder { color: #64748b; }
     .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
     .safe-top { padding-top: env(safe-area-inset-top); }
     /* Hide scrollbar on the section nav strip */
@@ -4160,7 +4165,7 @@ function QuoteGenerator() {
     onChange: v => update({
       jobName: v
     }),
-    placeholder: "Dove Commercial"
+    placeholder: "e.g. Dove Commercial"
   }), /*#__PURE__*/React.createElement(Field, {
     label: "Quote date",
     type: "date",
@@ -4174,7 +4179,7 @@ function QuoteGenerator() {
     onChange: v => update({
       productionCompany: v
     }),
-    placeholder: "Merman London"
+    placeholder: "e.g. Merman London"
   }), /*#__PURE__*/React.createElement(Field, {
     label: "Producer",
     value: quote.producer,
