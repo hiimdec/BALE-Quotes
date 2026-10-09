@@ -802,7 +802,15 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         max-height: calc(85vh - var(--kb, 0px)); max-height: calc(85dvh - var(--kb, 0px));
         padding-bottom: env(safe-area-inset-bottom); animation: sheet-up 0.22s ease-out;
       }
-      .toast-pos { top: calc(env(safe-area-inset-top) + 72px); }
+      /* Auto-hiding top row. The header slides up by the row's measured height; the
+         fixed backdrop keeps the status bar in the header colour, so the chips stop
+         just below it. --hdr-h is the header's real visible height (set from JS). */
+      .hdr-autohide { transition: transform 0.2s ease; }
+      .hdr-autohide.row-hidden { transform: translateY(calc(-1 * var(--row1-h, 68px))); }
+      .status-backdrop { position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top); background: #0f172a; z-index: 30; }
+      .scroll-mt-32 { scroll-margin-top: var(--hdr-h, 8rem); }
+      @media (prefers-reduced-motion: reduce) { .hdr-autohide { transition: none; } }
+      .toast-pos { top: calc(var(--hdr-h, calc(env(safe-area-inset-top) + 112px)) + 8px); }
       @media (prefers-reduced-motion: reduce) { .modal-sheet { animation: none; } }
       .guard-icon-warn { color: #fcd34d; }
       .guard-icon-crit { color: #fca5a5; }
@@ -3022,7 +3030,8 @@ function PreviewView({
   return /*#__PURE__*/React.createElement("div", {
     className: "min-h-screen bg-slate-100 text-slate-900"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "sticky top-0 z-30 bg-slate-900 text-slate-50 safe-top"
+    className: "sticky top-0 z-30 bg-slate-900 text-slate-50 safe-top",
+    "data-topbar": true
   }, /*#__PURE__*/React.createElement("div", {
     className: "max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-2 flex-wrap"
   }, /*#__PURE__*/React.createElement("button", {
@@ -3921,6 +3930,107 @@ function QuoteGenerator() {
   };
   const searchActive = !!itemSearch.trim();
 
+  /* Phone: the top header row (bulb, Open, Save, gear) slides away on scroll-down and
+     back on scroll-up; the chip strip stays pinned. The header moves by transform, so
+     nothing below it shifts. Anything that needs the header's height reads the real,
+     current value (hdrH / --hdr-h), never a fixed number. */
+  const headerRef = useRef(null);
+  const row1Ref = useRef(null);
+  const [rowHidden, setRowHidden] = useState(false);
+  const rowHiddenRef = useRef(false);
+  rowHiddenRef.current = rowHidden;
+  const [hdrH, setHdrH] = useState(0);
+  const programmaticScroll = useRef(null); // set during a chip tap's smooth scroll
+  const anyOverlay = showSaveDialog || showLoadDialog || showSettingsDialog || showCatalogEditor || !!confirm || totalsOpen || jobSheetOpen;
+  const overlayRef = useRef(false);
+  overlayRef.current = anyOverlay;
+  // Safe-area inset + top row (unless hidden) + chips.
+  const visibleHeaderHeight = hidden => {
+    const header = headerRef.current;
+    if (!header) return 0;
+    const safeTop = parseFloat(getComputedStyle(header).paddingTop) || 0;
+    const rowH = row1Ref.current ? row1Ref.current.offsetHeight : 0;
+    const chipsH = chipStripRef.current ? chipStripRef.current.offsetHeight : 0;
+    return safeTop + (hidden ? 0 : rowH) + chipsH;
+  };
+  useEffect(() => {
+    if (!isPhone || mode !== "edit") {
+      setRowHidden(false);
+      return;
+    }
+    let anchor = window.scrollY;
+    let frame = 0;
+    let settle = 0;
+    const onScroll = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        const y = window.scrollY;
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        if (y < 0 || y > max) return; // iOS rubber-band overscroll
+        if (programmaticScroll.current) {
+          // A chip tap is scrolling: hold still until it settles.
+          programmaticScroll.current.saw = true;
+          anchor = y;
+          clearTimeout(settle);
+          settle = setTimeout(() => {
+            programmaticScroll.current = null;
+            anchor = window.scrollY;
+          }, 150);
+          return;
+        }
+        // Sheets keep the row shown, and the keyboard scrolls the page under a focused input.
+        const a = document.activeElement;
+        if (overlayRef.current || a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) {
+          anchor = y;
+          return;
+        }
+        const rowH = row1Ref.current ? row1Ref.current.offsetHeight : 0;
+        if (y <= rowH) {
+          setRowHidden(false); // always shown near the top
+          anchor = y;
+        } else if (y - anchor > 8) {
+          setRowHidden(true);
+          anchor = y;
+        } else if (anchor - y > 8) {
+          setRowHidden(false);
+          anchor = y;
+        }
+      });
+    };
+    window.addEventListener("scroll", onScroll, {
+      passive: true
+    });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(frame);
+      clearTimeout(settle);
+    };
+  }, [isPhone, mode]);
+  // Any sheet or modal brings the row back.
+  useEffect(() => {
+    if (anyOverlay) setRowHidden(false);
+  }, [anyOverlay]);
+  // Publish the real header height: --hdr-h (section scroll-margin, the phone toast),
+  // --row1-h (how far the header slides) and hdrH (the section observer below).
+  useEffect(() => {
+    if (!isPhone) return;
+    const sync = () => {
+      let h;
+      if (mode === "edit") h = visibleHeaderHeight(rowHiddenRef.current);else {
+        const bar = document.querySelector("[data-topbar]");
+        h = bar ? bar.getBoundingClientRect().height : 0;
+      }
+      const rootStyle = document.documentElement.style;
+      rootStyle.setProperty("--hdr-h", `${Math.round(h)}px`);
+      if (row1Ref.current) rootStyle.setProperty("--row1-h", `${row1Ref.current.offsetHeight}px`);
+      setHdrH(Math.round(h));
+    };
+    sync();
+    window.addEventListener("resize", sync);
+    return () => window.removeEventListener("resize", sync);
+  }, [isPhone, mode, rowHidden]);
+
   /* Sticky section nav: track which section is in view */
   useEffect(() => {
     if (mode !== "edit") return;
@@ -3928,12 +4038,14 @@ function QuoteGenerator() {
       const visible = entries.filter(e => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
       if (visible[0]) setActiveSection(visible[0].target.dataset.section);
     }, {
-      rootMargin: "-100px 0px -50% 0px",
+      // Top margin = the header's real height on phones (it changes as the top row
+      // slides); iPad keeps its fixed 100px.
+      rootMargin: `-${isPhone ? hdrH : 100}px 0px -50% 0px`,
       threshold: 0
     });
     Object.values(sectionRefs.current).forEach(el => el && observer.observe(el));
     return () => observer.disconnect();
-  }, [mode, liveCatalog]);
+  }, [mode, liveCatalog, isPhone, hdrH]);
 
   /* Phone chip strip: show the right-edge fade only while there's more to scroll. */
   const chipStripRef = useRef(null);
@@ -3957,6 +4069,32 @@ function QuoteGenerator() {
     }));
     // Allow render
     setTimeout(() => {
+      if (isPhone) {
+        // Land the section just below the chips using the real header height. The
+        // top row keeps its current state, unless the target is near the top of the
+        // page, where it'll be showing anyway.
+        const docTop = el.getBoundingClientRect().top + window.pageYOffset;
+        const rowH = row1Ref.current ? row1Ref.current.offsetHeight : 0;
+        let hidden = rowHiddenRef.current;
+        let top = docTop - visibleHeaderHeight(hidden);
+        if (top <= rowH) {
+          hidden = false;
+          top = docTop - visibleHeaderHeight(false);
+        }
+        const hold = {
+          saw: false
+        };
+        programmaticScroll.current = hold; // don't toggle the row mid-scroll
+        setTimeout(() => {
+          if (programmaticScroll.current === hold && !hold.saw) programmaticScroll.current = null;
+        }, 300); // released here if the page didn't need to move
+        setRowHidden(hidden);
+        window.scrollTo({
+          top: Math.max(0, top),
+          behavior: "smooth"
+        });
+        return;
+      }
       const top = el.getBoundingClientRect().top + window.pageYOffset - 110;
       window.scrollTo({
         top,
@@ -4129,8 +4267,10 @@ function QuoteGenerator() {
   return /*#__PURE__*/React.createElement("div", {
     className: "min-h-screen bg-slate-50 text-slate-900"
   }, /*#__PURE__*/React.createElement("header", {
-    className: "sticky top-0 z-30 bg-slate-900 text-slate-50 safe-top"
+    ref: headerRef,
+    className: `sticky top-0 z-30 bg-slate-900 text-slate-50 safe-top${isPhone ? ` hdr-autohide${rowHidden ? " row-hidden" : ""}` : ""}`
   }, /*#__PURE__*/React.createElement("div", {
+    ref: row1Ref,
     className: "max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3"
   }, isPhone ?
   // Phones: the bulb is decorative, and the gear is the way into Settings.
@@ -4188,7 +4328,13 @@ function QuoteGenerator() {
   }, chipStrip, /*#__PURE__*/React.createElement("div", {
     className: `chip-fade${chipFade ? "" : " chip-fade-off"}`,
     "aria-hidden": true
-  })) : chipStrip), /*#__PURE__*/React.createElement("main", {
+  })) : chipStrip),
+  // Keeps the status-bar / notch area in the header colour while the top row is
+  // slid away, so the chips stop just below the status bar rather than under it.
+  isPhone && /*#__PURE__*/React.createElement("div", {
+    className: "status-backdrop",
+    "aria-hidden": true
+  }), /*#__PURE__*/React.createElement("main", {
     className: "max-w-6xl mx-auto px-4 pb-56 pt-6 space-y-6 main-pad"
   }, isPhone && /*#__PURE__*/React.createElement(PhoneJobSummary, {
     quote: quote,
