@@ -2673,7 +2673,8 @@ function PhoneJobSummary({
     size: 16
   }), "Add job details");
   const days = computeDaysFromRange(quote.dateStart, quote.dateEnd);
-  const line = [quote.jobName, quote.productionCompany, shootRangeShort(quote.dateStart, quote.dateEnd), days && daysLabel(days)].filter(Boolean).join(" \xB7 ");
+  // Most important first, so only the tail (the production company) can truncate.
+  const details = [days && daysLabel(days), shootRangeShort(quote.dateStart, quote.dateEnd), quote.productionCompany].filter(Boolean).join(" \xB7 ");
   return /*#__PURE__*/React.createElement("button", {
     onClick: onOpen,
     className: `${cardCls} px-3 py-2.5 flex items-center gap-3`
@@ -2681,10 +2682,15 @@ function PhoneJobSummary({
     className: "flex-1 min-w-0"
   }, /*#__PURE__*/React.createElement("div", {
     className: "text-sm font-semibold truncate"
-  }, line), /*#__PURE__*/React.createElement("div", {
-    className: "text-[11px] text-slate-400 tabular-nums",
+  }, quote.jobName), (details || quote.quoteNumber) && /*#__PURE__*/React.createElement("div", {
+    className: "mt-0.5 flex items-baseline gap-2 text-xs text-slate-500"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "flex-1 min-w-0 truncate"
+  }, details), quote.quoteNumber && /*#__PURE__*/React.createElement("span", {
+    // Pinned right so a long production company can't push it off the end.
+    className: "shrink-0 text-[11px] text-slate-400 tabular-nums",
     style: monoStyle
-  }, quote.quoteNumber || "No quote number yet")), /*#__PURE__*/React.createElement(EditIcon, {
+  }, quote.quoteNumber))), /*#__PURE__*/React.createElement(EditIcon, {
     size: 16,
     className: "text-slate-400 shrink-0"
   }));
