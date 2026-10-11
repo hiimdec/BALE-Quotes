@@ -2646,6 +2646,56 @@ function PhoneTotalsBar({
     size: 16
   }), " Preview")));
 }
+/* "9–11 Oct" within a month, "30 Sept–2 Oct" across months, "9 Oct" for one day.
+   Dates are YYYY-MM-DD, parsed as local dates so the day can't shift by time zone. */
+const localDate = s => {
+  const [y, m, d] = String(s).split("-").map(Number);
+  return new Date(y, m - 1, d);
+};
+const shootRangeShort = (start, end) => {
+  if (!start) return "";
+  const dayMonth = dt => dt.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short"
+  });
+  const s = localDate(start);
+  if (!end || end === start) return dayMonth(s);
+  const e = localDate(end);
+  return s.getMonth() === e.getMonth() && s.getFullYear() === e.getFullYear() ? `${s.getDate()}–${dayMonth(e)}` : `${dayMonth(s)}–${dayMonth(e)}`;
+};
+
+/* Phone: tappable header for the Job Details / Schedule cards. Collapsed, the card is
+   just this header, with a muted summary of what's set on a line under the title. */
+function PhoneCardHeader({
+  title,
+  icon,
+  extra,
+  action,
+  collapsed,
+  summary,
+  onToggle
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    className: `flex items-start gap-2 px-2 py-3${collapsed ? "" : " border-b border-slate-100"}`
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onToggle,
+    "aria-expanded": !collapsed,
+    className: "flex-1 min-w-0 text-left"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement(collapsed ? ChevRightIcon : ChevDownIcon, {
+    size: 16,
+    className: "text-slate-400 shrink-0"
+  }), icon, /*#__PURE__*/React.createElement("h2", {
+    className: "text-xs uppercase tracking-[0.18em] text-slate-500 font-semibold"
+  }, title), extra), collapsed && /*#__PURE__*/React.createElement("div", {
+    className: "mt-0.5 text-xs text-slate-500 truncate",
+    // Indent to sit under the title: chevron (16) + gap (8), plus the icon if any.
+    style: {
+      paddingLeft: icon ? 48 : 24
+    }
+  }, summary)), action);
+}
 function TotalRow({
   label,
   value,
@@ -3288,6 +3338,19 @@ function QuoteGenerator() {
   const [quoteNumberPrefix, setQuoteNumberPrefix] = useState(DEFAULT_QUOTE_PREFIX);
   const isPhone = useIsPhone();
   const [totalsOpen, setTotalsOpen] = useState(false); // phone: totals bar expanded as a sheet
+  // Phone: Job Details / Schedule cards collapsed to their headers. Memory only.
+  const [cardsCollapsed, setCardsCollapsed] = useState({
+    job: false,
+    schedule: false
+  });
+  // A quote that already has a job name opens with both cards collapsed; one without opens expanded.
+  const collapseCardsFor = q => {
+    const c = !!(q && q.jobName);
+    setCardsCollapsed({
+      job: c,
+      schedule: c
+    });
+  };
   const [mode, setMode] = useState("edit");
   const [openSections, setOpenSections] = useState({
     lights: true
@@ -3334,7 +3397,11 @@ function QuoteGenerator() {
       } catch (e) {}
       try {
         const r = await storage.get(STORAGE_KEY);
-        if (r && r.value) setQuote(mergeSaved(CATALOG_DEFAULT, JSON.parse(r.value)));
+        if (r && r.value) {
+          const draft = JSON.parse(r.value);
+          setQuote(mergeSaved(CATALOG_DEFAULT, draft));
+          collapseCardsFor(draft);
+        }
       } catch (e) {}
       try {
         const r = await storage.get(SAVED_INDEX_KEY);
@@ -3704,6 +3771,7 @@ function QuoteGenerator() {
         });
         setQuote(loaded);
         resetDiscountUi(loaded);
+        collapseCardsFor(loaded);
         setShowLoadDialog(false);
         await pushRecent(id);
         showToast("Loaded");
@@ -3745,6 +3813,7 @@ function QuoteGenerator() {
       const opened = mergeSaved(liveCatalog, dupQuote);
       setQuote(opened);
       resetDiscountUi(opened);
+      collapseCardsFor(opened);
       await pushRecent(newId);
       setShowLoadDialog(false);
       showToast(`Duplicated as "${dupName}"`);
@@ -3800,6 +3869,7 @@ function QuoteGenerator() {
           setGlobalDays(1);
           setDiscountEditMode("percent");
           setItemSearch("");
+          collapseCardsFor(null);
           setConfirm(null);
           showToast("New quote started");
         }
@@ -3810,6 +3880,7 @@ function QuoteGenerator() {
       setGlobalDays(1);
       setDiscountEditMode("percent");
       setItemSearch("");
+      collapseCardsFor(null);
       showToast("New quote started");
     }
   };
@@ -4196,8 +4267,27 @@ function QuoteGenerator() {
     className: "max-w-6xl mx-auto px-4 pb-56 pt-6 space-y-6 main-pad"
   }, /*#__PURE__*/React.createElement("section", {
     className: "bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "px-5 py-3 border-b border-slate-100 flex items-center justify-between phead"
+  }, isPhone ? /*#__PURE__*/React.createElement(PhoneCardHeader, {
+    title: "Job Details",
+    collapsed: cardsCollapsed.job,
+    onToggle: () => setCardsCollapsed(c => ({
+      ...c,
+      job: !c.job
+    })),
+    summary: quote.jobName || "No job name yet",
+    extra: /*#__PURE__*/React.createElement("span", {
+      className: "text-[11px] text-slate-400 tabular-nums",
+      style: monoStyle,
+      title: "Quote number — allocated when you first save or export"
+    }, quote.quoteNumber || "—"),
+    action: /*#__PURE__*/React.createElement("button", {
+      onClick: newQuote,
+      className: "text-xs text-slate-500 hover:text-slate-900 flex items-center gap-1"
+    }, /*#__PURE__*/React.createElement(RotateIcon, {
+      size: 12
+    }), " New")
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: "px-5 py-3 border-b border-slate-100 flex items-center justify-between"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-baseline gap-2"
   }, /*#__PURE__*/React.createElement("h2", {
@@ -4213,7 +4303,7 @@ function QuoteGenerator() {
     className: "text-xs text-slate-500 hover:text-slate-900 flex items-center gap-1"
   }, /*#__PURE__*/React.createElement(RotateIcon, {
     size: 12
-  }), " New")), /*#__PURE__*/React.createElement("div", {
+  }), " New")), !(isPhone && cardsCollapsed.job) && /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-1 sm:grid-cols-2 gap-4 p-5 pbody pgap"
   }, /*#__PURE__*/React.createElement(Field, {
     label: "Job name",
@@ -4245,14 +4335,26 @@ function QuoteGenerator() {
     placeholder: "Producer name"
   }))), /*#__PURE__*/React.createElement("section", {
     className: "bg-white rounded-2xl shadow-sm border border-slate-200/70 overflow-hidden"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "px-5 py-3 border-b border-slate-100 flex items-center gap-2 phead"
+  }, isPhone ? /*#__PURE__*/React.createElement(PhoneCardHeader, {
+    title: "Schedule & Defaults",
+    icon: /*#__PURE__*/React.createElement(CalendarIcon, {
+      size: 16,
+      className: "text-slate-400 shrink-0"
+    }),
+    collapsed: cardsCollapsed.schedule,
+    onToggle: () => setCardsCollapsed(c => ({
+      ...c,
+      schedule: !c.schedule
+    })),
+    summary: [daysLabel(globalDays), shootRangeShort(quote.dateStart, quote.dateEnd)].filter(Boolean).join(" \xB7 ")
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: "px-5 py-3 border-b border-slate-100 flex items-center gap-2"
   }, /*#__PURE__*/React.createElement(CalendarIcon, {
     size: 16,
     className: "text-slate-400"
   }), /*#__PURE__*/React.createElement("h2", {
     className: "text-xs uppercase tracking-[0.18em] text-slate-500 font-semibold"
-  }, "Schedule & Defaults")), /*#__PURE__*/React.createElement("div", {
+  }, "Schedule & Defaults")), !(isPhone && cardsCollapsed.schedule) && /*#__PURE__*/React.createElement("div", {
     className: "p-5 space-y-5 pbody pstack"
   }, /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-1 sm:grid-cols-3 gap-3 items-end sched-grid"
