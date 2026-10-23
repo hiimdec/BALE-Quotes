@@ -1220,15 +1220,6 @@ const CATALOG_DEFAULT = {
       name: "PROLYCHT ORION 675FS",
       price: 150
     }, {
-      name: "CRLS 100 0/1",
-      price: 125
-    }, {
-      name: "CRLS 100 1/2",
-      price: 125
-    }, {
-      name: "CRLS 100 3/4",
-      price: 125
-    }, {
       name: "KINO AIR 2L + DOP CHOICE SNAP GRID",
       price: 110
     }, {
@@ -1315,6 +1306,18 @@ const CATALOG_DEFAULT = {
   effects: {
     label: "Effects",
     items: [{
+      name: "CRLS 100 0/1",
+      price: 125,
+      pinned: true
+    }, {
+      name: "CRLS 100 1/2",
+      price: 125,
+      pinned: true
+    }, {
+      name: "CRLS 100 3/4",
+      price: 125,
+      pinned: true
+    }, {
       name: "CRLS DRIVE KIT",
       price: 225
     }, {
@@ -1683,9 +1686,10 @@ function applyOverrides(base, overrides) {
       default: add.default
     });
   });
-  // Re-sort by price desc within each section
+  // Re-sort by price desc within each section; `pinned` items stay first (in
+  // their source order — the sort is stable).
   Object.values(live).forEach(sec => {
-    sec.items.sort((a, b) => Number(b.price) - Number(a.price));
+    sec.items.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || Number(b.price) - Number(a.price));
   });
   return live;
 }
@@ -1761,10 +1765,23 @@ function mergeSaved(catalog, saved) {
           price: oldIt.price ?? freshItems[id].price
         };
       } else {
-        // Item was removed from catalog but is in this saved quote; keep it
-        freshItems[id] = {
-          ...oldIt
-        };
+        // Not in the catalogue under this section any more. If it moved to
+        // another section, carry the line across; if it was removed, keep it only
+        // when it's actually on the quote — every quote stores every catalogue
+        // item, so a qty-0 row of a removed item is just a leftover.
+        const movedId = Object.keys(freshItems).find(k => !freshItems[k].custom && freshItems[k].name === oldIt.name);
+        if (movedId) {
+          freshItems[movedId] = {
+            ...freshItems[movedId],
+            qty: oldIt.qty,
+            days: oldIt.days,
+            price: oldIt.price ?? freshItems[movedId].price
+          };
+        } else if (Number(oldIt.qty) > 0) {
+          freshItems[id] = {
+            ...oldIt
+          };
+        }
       }
     });
   }

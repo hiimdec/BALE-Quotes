@@ -37,7 +37,8 @@ sectionKey: {
   label: "Human readable",
   excludeFromDiscount: true,   // optional — consumables only
   items: [
-    { name: "ITEM NAME IN CAPS", price: 24, default: 2 }  // `default` = qty pre-filled
+    { name: "ITEM NAME IN CAPS", price: 24, default: 2 }, // `default` = qty pre-filled
+    { name: "PINNED ITEM", price: 125, pinned: true }     // optional — listed first
   ]
 }
 ```
@@ -48,13 +49,19 @@ Sections in order: `lights`, `modifiers`, `effects`, `power`, `stands`, `booms`,
 Conventions:
 
 - Item names are **UPPERCASE**. Textiles are size-prefixed (`8x8 …`, `12x12 …`).
-- Items are listed price-descending within a section. `applyOverrides()` re-sorts at
-  runtime anyway, so source order is cosmetic — but keep it tidy.
+- Items are listed price-descending within a section, except `pinned` items, which go
+  first in source order (e.g. the CRLS 100 units at the top of Effects). Whenever
+  catalogue edits exist, `applyOverrides()` re-sorts by price at runtime, pinned first —
+  so keep the source in the same order.
 - `default` is the quantity pre-filled on a fresh quote. Omit it for items that aren't
   standard on a truck.
 - Adding an item to `CATALOG_DEFAULT` is safe with existing saved quotes: user-side
   catalogue edits live separately in `alq:catalogOverrides` and merge on top via
   `applyOverrides()` (`priceEdits` / `additions` / `removals`).
+- Removing or moving an item is safe too. When a quote opens, `mergeSaved()` carries a
+  moved item's line to its new section, and drops a removed item unless it's actually on
+  the quote (qty > 0) — every quote stores every catalogue item, so the qty-0 rows are
+  just leftovers.
 
 ## Deployment
 
